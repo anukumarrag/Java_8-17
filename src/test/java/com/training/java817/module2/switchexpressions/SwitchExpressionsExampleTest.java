@@ -104,7 +104,7 @@ class SwitchExpressionsExampleTest {
 
     @Test
     @DisplayName("Notification channel: FIXED_INCOME routes to rates-desk")
-    void buildNotificationChannel_fixedIncome_routesToRatesDask() {
+    void buildNotificationChannel_fixedIncome_routesToRatesDesk() {
         String channel = ex.buildNotificationChannel(SwitchExpressionsExample.AssetClass.FIXED_INCOME);
         assertTrue(channel.contains("rates-desk"));
     }
