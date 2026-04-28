@@ -1,0 +1,191 @@
+package com.training.java817.module2.records;
+
+import java.time.LocalDate;
+import java.util.Objects;
+
+/**
+ * =============================================================================
+ * MODULE 2 – RECORDS (JEP 395, Java 16 GA)
+ * =============================================================================
+ *
+ * THEORY
+ * ------
+ * A record is a special, restricted kind of class designed to be a transparent,
+ * immutable carrier of data.  Given a set of fields (the "record components"),
+ * the compiler automatically generates:
+ *   • A canonical constructor
+ *   • A public accessor method per component (same name, no "get" prefix)
+ *   • equals() and hashCode() based on ALL components
+ *   • toString() that prints all components
+ *
+ * PROBLEM SOLVED
+ * --------------
+ * 1. Eliminates 50–100 lines of DTO/POJO boilerplate.
+ * 2. Guarantees immutability – all fields are final by default.
+ * 3. Removes dependency on third-party code generators like Lombok.
+ * 4. Makes Data Transfer Objects and Value Objects first-class citizens
+ *    in the language.
+ *
+ * RULES & LIMITATIONS
+ * --------------------
+ *  • Cannot extend another class (already extends java.lang.Record).
+ *  • Cannot be abstract.
+ *  • All fields are implicitly private final.
+ *  • Can implement interfaces.
+ *  • Can have static fields/methods.
+ *  • Can have custom constructors and methods.
+ *  • Can have compact constructors (no parameter list) for validation.
+ */
+public class RecordsExample {
+
+    // =========================================================================
+    // BEFORE – Traditional POJO (Data Transfer Object)
+    // =========================================================================
+
+    /**
+     * Before Java 16: a typical TradeDetails DTO required ~80 lines of code.
+     * This class shows the full boilerplate.
+     */
+    public static class TradeDetailsPojo {
+        private final String tradeId;
+        private final String symbol;
+        private final double notional;
+        private final String counterpartyId;
+        private final LocalDate settlementDate;
+        private final String status;
+
+        public TradeDetailsPojo(String tradeId, String symbol, double notional,
+                                String counterpartyId, LocalDate settlementDate,
+                                String status) {
+            this.tradeId         = Objects.requireNonNull(tradeId, "tradeId required");
+            this.symbol          = Objects.requireNonNull(symbol, "symbol required");
+            this.notional        = notional;
+            this.counterpartyId  = Objects.requireNonNull(counterpartyId, "counterpartyId required");
+            this.settlementDate  = Objects.requireNonNull(settlementDate, "settlementDate required");
+            this.status          = Objects.requireNonNull(status, "status required");
+        }
+
+        public String getTradeId()         { return tradeId; }
+        public String getSymbol()          { return symbol; }
+        public double getNotional()        { return notional; }
+        public String getCounterpartyId()  { return counterpartyId; }
+        public LocalDate getSettlementDate() { return settlementDate; }
+        public String getStatus()          { return status; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof TradeDetailsPojo)) return false;
+            TradeDetailsPojo that = (TradeDetailsPojo) o;
+            return Double.compare(that.notional, notional) == 0
+                    && Objects.equals(tradeId, that.tradeId)
+                    && Objects.equals(symbol, that.symbol)
+                    && Objects.equals(counterpartyId, that.counterpartyId)
+                    && Objects.equals(settlementDate, that.settlementDate)
+                    && Objects.equals(status, that.status);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(tradeId, symbol, notional,
+                                counterpartyId, settlementDate, status);
+        }
+
+        @Override
+        public String toString() {
+            return "TradeDetailsPojo{" +
+                    "tradeId='" + tradeId + '\'' +
+                    ", symbol='" + symbol + '\'' +
+                    ", notional=" + notional +
+                    ", counterpartyId='" + counterpartyId + '\'' +
+                    ", settlementDate=" + settlementDate +
+                    ", status='" + status + '\'' +
+                    '}';
+        }
+    }
+
+    // =========================================================================
+    // AFTER – Java 16 Record  (one line replaces ~80 lines above)
+    // =========================================================================
+
+    /**
+     * Exactly the same DTO – expressed as a record.
+     * equals, hashCode, toString, accessors, and the canonical constructor
+     * are all auto-generated by the compiler.
+     */
+    public record TradeDetailsRecord(
+            String tradeId,
+            String symbol,
+            double notional,
+            String counterpartyId,
+            LocalDate settlementDate,
+            String status
+    ) {
+        // --- Compact constructor: validation without repeating field assignments ---
+        public TradeDetailsRecord {
+            Objects.requireNonNull(tradeId,        "tradeId required");
+            Objects.requireNonNull(symbol,         "symbol required");
+            Objects.requireNonNull(counterpartyId, "counterpartyId required");
+            Objects.requireNonNull(settlementDate, "settlementDate required");
+            Objects.requireNonNull(status,         "status required");
+            if (notional < 0) throw new IllegalArgumentException("notional must be >= 0");
+        }
+
+        // --- Custom method: derived value (records CAN have instance methods) ---
+        public boolean isHighValue() {
+            return notional > 1_000_000.0;
+        }
+
+        // --- Static factory method ---
+        public static TradeDetailsRecord draft(String tradeId, String symbol, double notional,
+                                               String counterpartyId) {
+            return new TradeDetailsRecord(tradeId, symbol, notional,
+                    counterpartyId, LocalDate.now(), "DRAFT");
+        }
+    }
+
+    // =========================================================================
+    // Nested / Generic records
+    // =========================================================================
+
+    /** A generic Pair record – useful for returning two related values. */
+    public record Pair<A, B>(A first, B second) {}
+
+    /** Nested records compose naturally. */
+    public record TradeConfirmation(
+            TradeDetailsRecord trade,
+            String confirmationRef,
+            LocalDate confirmedAt
+    ) {}
+
+    // =========================================================================
+    // Records implement interfaces
+    // =========================================================================
+
+    public interface Auditable {
+        String auditSummary();
+    }
+
+    public record AuditedTrade(String tradeId, String action, String performedBy)
+            implements Auditable {
+        @Override
+        public String auditSummary() {
+            return String.format("[AUDIT] %s performed '%s' on trade %s",
+                    performedBy, action, tradeId);
+        }
+    }
+
+    // demo main
+    public static void main(String[] args) {
+        TradeDetailsRecord trade = TradeDetailsRecord.draft("T001", "AAPL", 1_500_000, "CP01");
+        System.out.println(trade);
+        System.out.println("Is high value: " + trade.isHighValue());
+        System.out.println("Symbol       : " + trade.symbol());     // accessor – no "get" prefix
+
+        TradeDetailsRecord trade2 = TradeDetailsRecord.draft("T001", "AAPL", 1_500_000, "CP01");
+        System.out.println("equals       : " + trade.equals(trade2)); // true
+
+        AuditedTrade audit = new AuditedTrade("T001", "EXECUTE", "john.doe");
+        System.out.println(audit.auditSummary());
+    }
+}
