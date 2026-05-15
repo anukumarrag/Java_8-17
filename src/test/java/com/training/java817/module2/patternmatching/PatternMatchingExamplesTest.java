@@ -24,9 +24,9 @@ class PatternMatchingExamplesTest {
     }
 
     @Test
-    @DisplayName("Before/After: TradeEvent description matches")
-    void describeEvent_tradeEvent_matchesBeforeAndAfter() {
-        var event = new PatternMatchingExamples.TradeEvent("T001", "AAPL", 1_000_000);
+    @DisplayName("Before/After: PayrollEvent description matches")
+    void describeEvent_payrollEvent_matchesBeforeAndAfter() {
+        var event = new PatternMatchingExamples.PayrollEvent("E001", "ENGINEERING", 95_000);
         assertEquals(ex.describeEvent_Before(event), ex.describeEvent_After(event));
     }
 
@@ -56,46 +56,46 @@ class PatternMatchingExamplesTest {
     }
 
     @Test
-    @DisplayName("After: TradeEvent description contains trade ID and amount")
-    void describeEvent_after_tradeContainsIdAndAmount() {
-        var event = new PatternMatchingExamples.TradeEvent("T002", "MSFT", 2_500_000.0);
+    @DisplayName("After: PayrollEvent description contains employee ID and amount")
+    void describeEvent_after_payrollContainsIdAndAmount() {
+        var event = new PatternMatchingExamples.PayrollEvent("E002", "MARKETING", 80_000.0);
         String desc = ex.describeEvent_After(event);
-        assertTrue(desc.contains("T002"));
-        assertTrue(desc.contains("2500000.0"));
+        assertTrue(desc.contains("E002"));
+        assertTrue(desc.contains("80000.0"));
     }
 
     // --- Guard condition (&&) ---
 
     @Test
-    @DisplayName("High-value guard: trade above 1M is classified as high-value")
-    void describeHighValueTrade_aboveThreshold_classified() {
-        var event = new PatternMatchingExamples.TradeEvent("T003", "GOOG", 5_000_000);
-        String result = ex.describeHighValueTrade(event);
-        assertTrue(result.startsWith("HIGH-VALUE"));
-        assertTrue(result.contains("T003"));
+    @DisplayName("High-salary guard: payroll above 100K is classified as high-salary")
+    void describeHighSalaryEvent_aboveThreshold_classified() {
+        var event = new PatternMatchingExamples.PayrollEvent("E003", "FINANCE", 150_000);
+        String result = ex.describeHighSalaryEvent(event);
+        assertTrue(result.startsWith("HIGH-SALARY"));
+        assertTrue(result.contains("E003"));
     }
 
     @Test
-    @DisplayName("High-value guard: trade below 1M is classified as standard")
-    void describeHighValueTrade_belowThreshold_classified() {
-        var event = new PatternMatchingExamples.TradeEvent("T004", "AAPL", 500_000);
-        String result = ex.describeHighValueTrade(event);
+    @DisplayName("High-salary guard: payroll below 100K is classified as standard")
+    void describeHighSalaryEvent_belowThreshold_classified() {
+        var event = new PatternMatchingExamples.PayrollEvent("E004", "HR", 60_000);
+        String result = ex.describeHighSalaryEvent(event);
         assertTrue(result.startsWith("Standard"));
     }
 
     @Test
-    @DisplayName("High-value guard: non-trade event returns not-a-trade message")
-    void describeHighValueTrade_nonTrade_returnsMessage() {
+    @DisplayName("High-salary guard: non-payroll event returns not-a-payroll message")
+    void describeHighSalaryEvent_nonPayroll_returnsMessage() {
         var login = new PatternMatchingExamples.LoginEvent("alice", "10.0.0.1", true);
-        assertEquals("Not a trade event", ex.describeHighValueTrade(login));
+        assertEquals("Not a payroll event", ex.describeHighSalaryEvent(login));
     }
 
     // --- Negation ---
 
     @Test
-    @DisplayName("isNotLoginEvent: true for TradeEvent")
-    void isNotLoginEvent_tradeEvent_returnsTrue() {
-        assertTrue(ex.isNotLoginEvent(new PatternMatchingExamples.TradeEvent("T1", "AAPL", 1000)));
+    @DisplayName("isNotLoginEvent: true for PayrollEvent")
+    void isNotLoginEvent_payrollEvent_returnsTrue() {
+        assertTrue(ex.isNotLoginEvent(new PatternMatchingExamples.PayrollEvent("E1", "SALES", 70_000)));
     }
 
     @Test

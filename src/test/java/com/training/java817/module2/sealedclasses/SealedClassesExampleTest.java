@@ -15,83 +15,83 @@ class SealedClassesExampleTest {
     void setUp() { ex = new SealedClassesExample(); }
 
     @Test
-    @DisplayName("describeEvent: TradeCreated contains symbol and notional")
-    void describeEvent_created_containsSymbolAndNotional() {
-        String result = ex.describeEvent(new SealedClassesExample.TradeCreated(
-                "T001", "AAPL", 1_500_000));
-        assertTrue(result.contains("AAPL"));
-        assertTrue(result.contains("1500000.00"));
+    @DisplayName("describeEvent: EmployeeHired contains name and salary")
+    void describeEvent_hired_containsNameAndSalary() {
+        String result = ex.describeEvent(new SealedClassesExample.EmployeeHired(
+                "E001", "Alice", 85_000));
+        assertTrue(result.contains("Alice"));
+        assertTrue(result.contains("85000.00"));
     }
 
     @Test
-    @DisplayName("describeEvent: TradeUpdated contains new notional")
-    void describeEvent_updated_containsNewNotional() {
-        String result = ex.describeEvent(new SealedClassesExample.TradeUpdated(
-                "T002", 750_000));
-        assertTrue(result.contains("750000.00"));
+    @DisplayName("describeEvent: EmployeeUpdated contains new salary")
+    void describeEvent_updated_containsNewSalary() {
+        String result = ex.describeEvent(new SealedClassesExample.EmployeeUpdated(
+                "E002", 90_000));
+        assertTrue(result.contains("90000.00"));
     }
 
     @Test
-    @DisplayName("describeEvent: TradeExecuted contains venue and price")
-    void describeEvent_executed_containsVenueAndPrice() {
-        String result = ex.describeEvent(new SealedClassesExample.TradeExecuted(
-                "T003", "NYSE", 182.50));
-        assertTrue(result.contains("182.5"));
-        assertTrue(result.contains("NYSE"));
+    @DisplayName("describeEvent: EmployeePromoted contains title and salary")
+    void describeEvent_promoted_containsTitleAndSalary() {
+        String result = ex.describeEvent(new SealedClassesExample.EmployeePromoted(
+                "E003", "SENIOR_ENGINEER", 105_000));
+        assertTrue(result.contains("105000.00"));
+        assertTrue(result.contains("SENIOR_ENGINEER"));
     }
 
     @Test
-    @DisplayName("describeEvent: TradeRejected contains rejection reason")
-    void describeEvent_rejected_containsReason() {
-        String result = ex.describeEvent(new SealedClassesExample.TradeRejected(
-                "T004", "Insufficient funds"));
-        assertTrue(result.contains("Insufficient funds"));
+    @DisplayName("describeEvent: EmployeeTerminated contains termination reason")
+    void describeEvent_terminated_containsReason() {
+        String result = ex.describeEvent(new SealedClassesExample.EmployeeTerminated(
+                "E004", "Voluntary resignation"));
+        assertTrue(result.contains("Voluntary resignation"));
     }
 
     // --- Record equality (auto-generated) ---
 
     @Test
-    @DisplayName("Record equality: two identical TradeCreated events are equal")
-    void tradeCreated_equality() {
-        var e1 = new SealedClassesExample.TradeCreated("T001", "AAPL", 1_000_000);
-        var e2 = new SealedClassesExample.TradeCreated("T001", "AAPL", 1_000_000);
+    @DisplayName("Record equality: two identical EmployeeHired events are equal")
+    void employeeHired_equality() {
+        var e1 = new SealedClassesExample.EmployeeHired("E001", "Alice", 85_000);
+        var e2 = new SealedClassesExample.EmployeeHired("E001", "Alice", 85_000);
         assertEquals(e1, e2);
     }
 
     @Test
-    @DisplayName("Record equality: different symbols produce different records")
-    void tradeCreated_differentSymbol_notEqual() {
-        var e1 = new SealedClassesExample.TradeCreated("T001", "AAPL", 1_000_000);
-        var e2 = new SealedClassesExample.TradeCreated("T001", "MSFT", 1_000_000);
+    @DisplayName("Record equality: different names produce different records")
+    void employeeHired_differentName_notEqual() {
+        var e1 = new SealedClassesExample.EmployeeHired("E001", "Alice", 85_000);
+        var e2 = new SealedClassesExample.EmployeeHired("E001", "Bob",   85_000);
         assertNotEquals(e1, e2);
     }
 
     // --- Sealed type hierarchy ---
 
     @Test
-    @DisplayName("Sealed interface: TradeCreated IS-A TradeEvent")
-    void tradeCreated_isInstanceOfTradeEvent() {
-        SealedClassesExample.TradeEvent event =
-                new SealedClassesExample.TradeCreated("T001", "AAPL", 1_000_000);
-        assertInstanceOf(SealedClassesExample.TradeEvent.class, event);
+    @DisplayName("Sealed interface: EmployeeHired IS-A EmployeeEvent")
+    void employeeHired_isInstanceOfEmployeeEvent() {
+        SealedClassesExample.EmployeeEvent event =
+                new SealedClassesExample.EmployeeHired("E001", "Alice", 85_000);
+        assertInstanceOf(SealedClassesExample.EmployeeEvent.class, event);
     }
 
     @Test
-    @DisplayName("Sealed interface: TradeRejected IS-A TradeEvent")
-    void tradeRejected_isInstanceOfTradeEvent() {
-        SealedClassesExample.TradeEvent event =
-                new SealedClassesExample.TradeRejected("T002", "Limit exceeded");
-        assertInstanceOf(SealedClassesExample.TradeEvent.class, event);
+    @DisplayName("Sealed interface: EmployeeTerminated IS-A EmployeeEvent")
+    void employeeTerminated_isInstanceOfEmployeeEvent() {
+        SealedClassesExample.EmployeeEvent event =
+                new SealedClassesExample.EmployeeTerminated("E002", "Limit exceeded");
+        assertInstanceOf(SealedClassesExample.EmployeeEvent.class, event);
     }
 
     // --- toString (auto-generated by record) ---
 
     @Test
     @DisplayName("Record toString: contains component values")
-    void tradeExecuted_toString_containsValues() {
-        String str = new SealedClassesExample.TradeExecuted("T001", "NYSE", 182.5).toString();
-        assertTrue(str.contains("T001"));
-        assertTrue(str.contains("NYSE"));
-        assertTrue(str.contains("182.5"));
+    void employeePromoted_toString_containsValues() {
+        String str = new SealedClassesExample.EmployeePromoted("E001", "LEAD", 120_000).toString();
+        assertTrue(str.contains("E001"));
+        assertTrue(str.contains("LEAD"));
+        assertTrue(str.contains("120000.0"));
     }
 }

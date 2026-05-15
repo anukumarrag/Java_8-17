@@ -34,32 +34,32 @@ public class SwitchExpressionsExample {
     // Domain enums
     // =========================================================================
 
-    public enum TradeStatus { DRAFT, PENDING, EXECUTED, SETTLED, REJECTED, CANCELLED }
-    public enum AssetClass  { EQUITY, FIXED_INCOME, COMMODITY, FOREX, DERIVATIVE }
+    public enum EmployeeStatus { APPLIED, ONBOARDING, ACTIVE, ON_LEAVE, RESIGNED, TERMINATED }
+    public enum Department     { ENGINEERING, MARKETING, SALES, FINANCE, HR }
 
     // =========================================================================
     // BEFORE – Traditional switch statement (statement form, fall-through risk)
     // =========================================================================
 
-    /** Map trade status to an SLA in hours – old style. */
-    public int getSlaHours_Before(TradeStatus status) {
+    /** Map employee status to an SLA in hours – old style. */
+    public int getSlaHours_Before(EmployeeStatus status) {
         int hours;
         switch (status) {
-            case DRAFT:
+            case APPLIED:
+                hours = 48;
+                break;
+            case ONBOARDING:
                 hours = 24;
                 break;
-            case PENDING:
-                hours = 4;
+            case ACTIVE:
+                hours = 72;
                 break;
-            case EXECUTED:
-                hours = 1;
+            case ON_LEAVE:
+                hours = 8;
                 break;
-            case SETTLED:
+            case RESIGNED:   // intentional fall-through … but easily accidental
+            case TERMINATED:
                 hours = 0;
-                break;
-            case REJECTED:   // intentional fall-through … but easily accidental
-            case CANCELLED:
-                hours = 48;
                 break;
             default:
                 throw new IllegalArgumentException("Unknown status: " + status);
@@ -67,20 +67,20 @@ public class SwitchExpressionsExample {
         return hours;
     }
 
-    /** Map asset class to a risk weight – old if-else chain. */
-    public double getRiskWeight_Before(AssetClass ac) {
-        if (ac == AssetClass.EQUITY) {
-            return 1.0;
-        } else if (ac == AssetClass.FIXED_INCOME) {
-            return 0.5;
-        } else if (ac == AssetClass.COMMODITY) {
-            return 0.8;
-        } else if (ac == AssetClass.FOREX) {
-            return 0.6;
-        } else if (ac == AssetClass.DERIVATIVE) {
+    /** Map department to a budget multiplier – old if-else chain. */
+    public double getBudgetMultiplier_Before(Department dept) {
+        if (dept == Department.ENGINEERING) {
             return 1.5;
+        } else if (dept == Department.MARKETING) {
+            return 1.2;
+        } else if (dept == Department.SALES) {
+            return 1.3;
+        } else if (dept == Department.FINANCE) {
+            return 1.0;
+        } else if (dept == Department.HR) {
+            return 0.8;
         } else {
-            throw new IllegalArgumentException("Unknown asset class: " + ac);
+            throw new IllegalArgumentException("Unknown department: " + dept);
         }
     }
 
@@ -88,27 +88,27 @@ public class SwitchExpressionsExample {
     // AFTER – Switch expressions (arrow form)
     // =========================================================================
 
-    /** Map trade status to SLA – clean expression form. */
-    public int getSlaHours_After(TradeStatus status) {
+    /** Map employee status to SLA – clean expression form. */
+    public int getSlaHours_After(EmployeeStatus status) {
         return switch (status) {
-            case DRAFT      -> 24;
-            case PENDING    -> 4;
-            case EXECUTED   -> 1;
-            case SETTLED    -> 0;
-            case REJECTED,
-                 CANCELLED  -> 48;   // multiple labels, no fall-through needed
+            case APPLIED    -> 48;
+            case ONBOARDING -> 24;
+            case ACTIVE     -> 72;
+            case ON_LEAVE   -> 8;
+            case RESIGNED,
+                 TERMINATED -> 0;   // multiple labels, no fall-through needed
         };
         // No default needed: enum is exhaustive; compiler error if a new value is added
     }
 
-    /** Map asset class to risk weight – expression form. */
-    public double getRiskWeight_After(AssetClass ac) {
-        return switch (ac) {
-            case EQUITY       -> 1.0;
-            case FIXED_INCOME -> 0.5;
-            case COMMODITY    -> 0.8;
-            case FOREX        -> 0.6;
-            case DERIVATIVE   -> 1.5;
+    /** Map department to budget multiplier – expression form. */
+    public double getBudgetMultiplier_After(Department dept) {
+        return switch (dept) {
+            case ENGINEERING -> 1.5;
+            case MARKETING   -> 1.2;
+            case SALES       -> 1.3;
+            case FINANCE     -> 1.0;
+            case HR          -> 0.8;
         };
     }
 
@@ -116,20 +116,20 @@ public class SwitchExpressionsExample {
     // yield – multi-statement block arm that returns a value
     // =========================================================================
 
-    public String formatStatusMessage_After(TradeStatus status) {
+    public String formatStatusMessage_After(EmployeeStatus status) {
         return switch (status) {
-            case DRAFT     -> "Trade is in draft state";
-            case PENDING   -> "Trade is awaiting confirmation";
-            case EXECUTED  -> "Trade has been executed";
-            case SETTLED   -> "Trade has settled – all done";
-            case REJECTED  -> {
+            case APPLIED    -> "Employee application received";
+            case ONBOARDING -> "Employee is currently onboarding";
+            case ACTIVE     -> "Employee is active";
+            case ON_LEAVE   -> "Employee is on leave";
+            case RESIGNED   -> {
                 // block arm: use yield to return
-                String base = "Trade was REJECTED";
-                yield base + " – please review and resubmit";
+                String base = "Employee has RESIGNED";
+                yield base + " – please review and resubmit if needed";
             }
-            case CANCELLED -> {
-                String base = "Trade was CANCELLED";
-                yield base + " – contact operations";
+            case TERMINATED -> {
+                String base = "Employee was TERMINATED";
+                yield base + " – contact HR operations";
             }
         };
     }
@@ -138,15 +138,15 @@ public class SwitchExpressionsExample {
     // Switch expression used inline in method arguments
     // =========================================================================
 
-    public void processWithPriority(TradeStatus status) {
+    public void processWithPriority(EmployeeStatus status) {
         // The switch result flows directly into the method call
         logAtLevel(
             switch (status) {
-                case EXECUTED, SETTLED -> "INFO";
-                case REJECTED, CANCELLED -> "WARN";
-                case DRAFT, PENDING    -> "DEBUG";
+                case ACTIVE, ONBOARDING  -> "INFO";
+                case RESIGNED, TERMINATED -> "WARN";
+                case APPLIED, ON_LEAVE    -> "DEBUG";
             },
-            "Processing trade with status: " + status
+            "Processing employee with status: " + status
         );
     }
 
@@ -158,11 +158,11 @@ public class SwitchExpressionsExample {
     // Traditional statement form still works (backwards compatible)
     // =========================================================================
 
-    public void printStatus_Statement(TradeStatus status) {
+    public void printStatus_Statement(EmployeeStatus status) {
         switch (status) {
-            case EXECUTED -> System.out.println("Trade executed successfully");
-            case REJECTED -> System.out.println("Trade rejected");
-            default       -> System.out.println("Trade in state: " + status);
+            case ACTIVE     -> System.out.println("Employee is active");
+            case TERMINATED -> System.out.println("Employee terminated");
+            default         -> System.out.println("Employee in state: " + status);
         }
     }
 
@@ -170,12 +170,13 @@ public class SwitchExpressionsExample {
     // Factory method using switch expression
     // =========================================================================
 
-    public String buildNotificationChannel(AssetClass ac) {
-        String channel = switch (ac) {
-            case EQUITY, DERIVATIVE       -> "equity-desk@bank.com";
-            case FIXED_INCOME             -> "rates-desk@bank.com";
-            case COMMODITY                -> "commodity-desk@bank.com";
-            case FOREX                    -> "fx-desk@bank.com";
+    public String buildNotificationChannel(Department dept) {
+        String channel = switch (dept) {
+            case ENGINEERING -> "engineering@company.com";
+            case MARKETING   -> "marketing@company.com";
+            case SALES       -> "sales@company.com";
+            case FINANCE     -> "finance@company.com";
+            case HR          -> "hr@company.com";
         };
         return "mailto:" + channel;
     }
@@ -183,13 +184,13 @@ public class SwitchExpressionsExample {
     // demo main
     public static void main(String[] args) {
         SwitchExpressionsExample ex = new SwitchExpressionsExample();
-        for (TradeStatus s : TradeStatus.values()) {
+        for (EmployeeStatus s : EmployeeStatus.values()) {
             System.out.printf("%-12s SLA=%2d h  msg=%s%n",
                     s, ex.getSlaHours_After(s), ex.formatStatusMessage_After(s));
         }
-        for (AssetClass ac : AssetClass.values()) {
-            System.out.printf("%-15s weight=%.1f  channel=%s%n",
-                    ac, ex.getRiskWeight_After(ac), ex.buildNotificationChannel(ac));
+        for (Department d : Department.values()) {
+            System.out.printf("%-15s multiplier=%.1f  channel=%s%n",
+                    d, ex.getBudgetMultiplier_After(d), ex.buildNotificationChannel(d));
         }
     }
 }

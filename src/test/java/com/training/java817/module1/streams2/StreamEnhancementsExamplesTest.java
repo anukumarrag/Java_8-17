@@ -17,57 +17,57 @@ class StreamEnhancementsExamplesTest {
     @BeforeEach
     void setUp() { ex = new StreamEnhancementsExamples(); }
 
-    private List<StreamEnhancementsExamples.Trade> sampleTrades() {
+    private List<StreamEnhancementsExamples.Employee> sampleEmployees() {
         return List.of(
-                new StreamEnhancementsExamples.Trade("T1", "AAPL", 100_000, "PENDING"),
-                new StreamEnhancementsExamples.Trade("T2", "MSFT", 200_000, "PENDING"),
-                new StreamEnhancementsExamples.Trade("T3", "GOOG", 300_000, "EXECUTED"),
-                new StreamEnhancementsExamples.Trade("T4", "TSLA", 50_000,  "REJECTED")
+                new StreamEnhancementsExamples.Employee("T1", "Alice",   "ENGINEERING", 100_000, "ONBOARDING"),
+                new StreamEnhancementsExamples.Employee("T2", "Bob",     "MARKETING",   200_000, "ONBOARDING"),
+                new StreamEnhancementsExamples.Employee("T3", "Charlie", "SALES",       300_000, "ACTIVE"),
+                new StreamEnhancementsExamples.Employee("T4", "Diana",   "HR",           50_000, "RESIGNED")
         );
     }
 
     // ---- takeWhile ----------------------------------------------------------
 
     @Test
-    @DisplayName("takeWhile: stops taking once price exceeds ceiling")
-    void pricesBelowCeiling_stopsAtCeiling() {
-        var result = ex.pricesBelowCeiling(
+    @DisplayName("takeWhile: stops taking once salary exceeds ceiling")
+    void salariesBelowThreshold_stopsAtCeiling() {
+        var result = ex.salariesBelowThreshold(
                 List.of(100.0, 150.0, 180.0, 210.0, 250.0), 200.0);
         assertEquals(List.of(100.0, 150.0, 180.0), result);
     }
 
     @Test
     @DisplayName("takeWhile: all elements below ceiling – returns all")
-    void pricesBelowCeiling_allBelowCeiling_returnsAll() {
-        var result = ex.pricesBelowCeiling(List.of(10.0, 20.0, 30.0), 100.0);
+    void salariesBelowThreshold_allBelowCeiling_returnsAll() {
+        var result = ex.salariesBelowThreshold(List.of(10.0, 20.0, 30.0), 100.0);
         assertEquals(3, result.size());
     }
 
     @Test
     @DisplayName("takeWhile: first element exceeds ceiling – returns empty")
-    void pricesBelowCeiling_firstExceedsCeiling_returnsEmpty() {
-        var result = ex.pricesBelowCeiling(List.of(300.0, 10.0, 20.0), 200.0);
+    void salariesBelowThreshold_firstExceedsCeiling_returnsEmpty() {
+        var result = ex.salariesBelowThreshold(List.of(300.0, 10.0, 20.0), 200.0);
         assertTrue(result.isEmpty(), "takeWhile stops on first failing element");
     }
 
     // ---- dropWhile ----------------------------------------------------------
 
     @Test
-    @DisplayName("dropWhile: drops all leading PENDING trades")
-    void skipLeadingPending_dropsLeadingPending() {
-        var result = ex.skipLeadingPending(sampleTrades());
-        assertEquals(2, result.size(),                   "two non-PENDING trades remain");
-        assertEquals("EXECUTED", result.get(0).status(), "first remaining is EXECUTED");
+    @DisplayName("dropWhile: drops all leading ONBOARDING employees")
+    void skipLeadingOnboarding_dropsLeadingOnboarding() {
+        var result = ex.skipLeadingOnboarding(sampleEmployees());
+        assertEquals(2, result.size(),                   "two non-ONBOARDING employees remain");
+        assertEquals("ACTIVE", result.get(0).status(), "first remaining is ACTIVE");
     }
 
     @Test
-    @DisplayName("dropWhile: no leading PENDING – returns all")
-    void skipLeadingPending_noPending_returnsAll() {
-        var trades = List.of(
-                new StreamEnhancementsExamples.Trade("T1", "AAPL", 100_000, "EXECUTED"),
-                new StreamEnhancementsExamples.Trade("T2", "MSFT", 200_000, "PENDING")
+    @DisplayName("dropWhile: no leading ONBOARDING – returns all")
+    void skipLeadingOnboarding_noOnboarding_returnsAll() {
+        var employees = List.of(
+                new StreamEnhancementsExamples.Employee("T1", "Alice", "ENGINEERING", 100_000, "ACTIVE"),
+                new StreamEnhancementsExamples.Employee("T2", "Bob",   "MARKETING",   200_000, "ONBOARDING")
         );
-        assertEquals(2, ex.skipLeadingPending(trades).size());
+        assertEquals(2, ex.skipLeadingOnboarding(employees).size());
     }
 
     // ---- iterate with predicate ---------------------------------------------
@@ -98,12 +98,12 @@ class StreamEnhancementsExamplesTest {
     @Test
     @DisplayName("collectNotes: only includes notes that exist in the map")
     void collectNotes_onlyExistingNotes() {
-        var trades = sampleTrades();
-        var notes  = Map.of("T1", "Important trade", "T3", "High value");
-        var result = ex.collectNotes(trades, notes);
+        var employees = sampleEmployees();
+        var notes  = Map.of("T1", "Important employee", "T3", "High performer");
+        var result = ex.collectNotes(employees, notes);
         assertEquals(2, result.size());
-        assertTrue(result.contains("Important trade"));
-        assertTrue(result.contains("High value"));
+        assertTrue(result.contains("Important employee"));
+        assertTrue(result.contains("High performer"));
     }
 
     @Test
@@ -122,46 +122,46 @@ class StreamEnhancementsExamplesTest {
     @Test
     @DisplayName("computeStats: sum and count are correct")
     void computeStats_correctSumAndCount() {
-        var stats = ex.computeStats(sampleTrades());
+        var stats = ex.computeStats(sampleEmployees());
         assertEquals(650_000.0, stats.sum(),  0.001);
         assertEquals(4L,        stats.count());
     }
 
     @Test
-    @DisplayName("partitionTrades: correctly separates executed from others")
-    void partitionTrades_separatesExecutedFromOthers() {
-        var result = ex.partitionTrades(sampleTrades());
-        assertEquals(1, result.executed().size());
+    @DisplayName("partitionEmployees: correctly separates active from others")
+    void partitionEmployees_separatesActiveFromOthers() {
+        var result = ex.partitionEmployees(sampleEmployees());
+        assertEquals(1, result.active().size());
         assertEquals(3, result.others().size());
-        assertEquals("T3", result.executed().get(0).id());
+        assertEquals("T3", result.active().get(0).id());
     }
 
     // ---- Stream.toList() ----------------------------------------------------
 
     @Test
-    @DisplayName("executedSymbols: returns distinct executed symbols as unmodifiable list")
-    void executedSymbols_returnsCorrectSymbols() {
-        var symbols = ex.executedSymbols(sampleTrades());
-        assertEquals(List.of("GOOG"), symbols);
+    @DisplayName("activeDepartments: returns distinct active departments as unmodifiable list")
+    void activeDepartments_returnsCorrectDepartments() {
+        var departments = ex.activeDepartments(sampleEmployees());
+        assertEquals(List.of("SALES"), departments);
         assertThrows(UnsupportedOperationException.class,
-                () -> symbols.add("EXTRA"), "toList() returns unmodifiable list");
+                () -> departments.add("EXTRA"), "toList() returns unmodifiable list");
     }
 
-    // ---- eligibleSymbols (combined) -----------------------------------------
+    // ---- eligibleDepartments (combined) -----------------------------------------
 
     @Test
-    @DisplayName("eligibleSymbols: drops DRAFT prefix and respects notional ceiling")
-    void eligibleSymbols_dropsDraftAndRespectsCeiling() {
-        var trades = List.of(
-                new StreamEnhancementsExamples.Trade("T0", "DRAFT_CO", 50_000,  "DRAFT"),
-                new StreamEnhancementsExamples.Trade("T1", "AAPL",     100_000, "EXECUTED"),
-                new StreamEnhancementsExamples.Trade("T2", "MSFT",     200_000, "EXECUTED"),
-                new StreamEnhancementsExamples.Trade("T3", "GOOG",     400_000, "EXECUTED")  // above ceiling
+    @DisplayName("eligibleDepartments: drops DRAFT prefix and respects salary ceiling")
+    void eligibleDepartments_dropsDraftAndRespectsCeiling() {
+        var employees = List.of(
+                new StreamEnhancementsExamples.Employee("T0", "Draft",   "DRAFT_DEPT", 50_000,  "DRAFT"),
+                new StreamEnhancementsExamples.Employee("T1", "Alice",   "ENGINEERING", 100_000, "ACTIVE"),
+                new StreamEnhancementsExamples.Employee("T2", "Bob",     "MARKETING",   200_000, "ACTIVE"),
+                new StreamEnhancementsExamples.Employee("T3", "Charlie", "SALES",       400_000, "ACTIVE")  // above ceiling
         );
-        var result = ex.eligibleSymbols(trades, 300_000);
-        assertTrue(result.contains("AAPL"), "AAPL is eligible");
-        assertTrue(result.contains("MSFT"), "MSFT is eligible");
-        assertFalse(result.contains("DRAFT_CO"), "DRAFT should be skipped");
-        assertFalse(result.contains("GOOG"),     "GOOG exceeds notional ceiling");
+        var result = ex.eligibleDepartments(employees, 300_000);
+        assertTrue(result.contains("ENGINEERING"), "ENGINEERING is eligible");
+        assertTrue(result.contains("MARKETING"),   "MARKETING is eligible");
+        assertFalse(result.contains("DRAFT_DEPT"), "DRAFT should be skipped");
+        assertFalse(result.contains("SALES"),      "SALES exceeds salary ceiling");
     }
 }

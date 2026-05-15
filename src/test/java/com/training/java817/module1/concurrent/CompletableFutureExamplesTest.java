@@ -18,61 +18,61 @@ class CompletableFutureExamplesTest {
     @BeforeEach
     void setUp() { ex = new CompletableFutureExamples(); }
 
-    // ---- fetchFormattedPrice ------------------------------------------------
+    // ---- fetchFormattedSalary ------------------------------------------------
 
     @Test
-    @DisplayName("fetchFormattedPrice: formats symbol and price")
-    void fetchFormattedPrice_containsSymbolAndPrice() {
-        String result = ex.fetchFormattedPrice("AAPL").join();
-        assertTrue(result.startsWith("AAPL"),      "should start with AAPL");
-        assertTrue(result.contains("182.5"),        "should contain price 182.5");
+    @DisplayName("fetchFormattedSalary: formats department and salary")
+    void fetchFormattedSalary_containsDepartmentAndSalary() {
+        String result = ex.fetchFormattedSalary("ENGINEERING").join();
+        assertTrue(result.startsWith("ENGINEERING"), "should start with ENGINEERING");
+        assertTrue(result.contains("85000"),          "should contain salary 85000");
     }
 
     @Test
-    @DisplayName("fetchFormattedPrice: unknown symbol returns default price")
-    void fetchFormattedPrice_unknownSymbol_usesDefault() {
-        String result = ex.fetchFormattedPrice("UNKNOWN").join();
-        assertTrue(result.contains("100.00"), "default price should be 100.00");
+    @DisplayName("fetchFormattedSalary: unknown department returns default salary")
+    void fetchFormattedSalary_unknownDepartment_usesDefault() {
+        String result = ex.fetchFormattedSalary("UNKNOWN").join();
+        assertTrue(result.contains("70000"), "default salary should be 70000");
     }
 
-    // ---- fetchTradeWithCounterparty -----------------------------------------
+    // ---- fetchEmployeeWithDepartment -----------------------------------------
 
     @Test
-    @DisplayName("fetchTradeWithCounterparty: result contains trade and CP info")
-    void fetchTradeWithCounterparty_containsTradeAndCp() {
-        String result = ex.fetchTradeWithCounterparty("T001").join();
-        assertTrue(result.contains("TRADE:T001"), "should contain trade id");
-        assertTrue(result.contains("CP:ACME"),    "should contain counterparty");
+    @DisplayName("fetchEmployeeWithDepartment: result contains employee and dept info")
+    void fetchEmployeeWithDepartment_containsEmployeeAndDept() {
+        String result = ex.fetchEmployeeWithDepartment("E001").join();
+        assertTrue(result.contains("EMPLOYEE:E001"), "should contain employee id");
+        assertTrue(result.contains("DEPT:"),          "should contain department info");
     }
 
-    // ---- fetchSpread --------------------------------------------------------
+    // ---- fetchSalaryRange --------------------------------------------------------
 
     @Test
-    @DisplayName("fetchSpread: result contains BID, ASK, and SPREAD")
-    void fetchSpread_containsAllComponents() {
-        String result = ex.fetchSpread("AAPL").join();
-        assertTrue(result.contains("BID="),    "should contain BID");
-        assertTrue(result.contains("ASK="),    "should contain ASK");
-        assertTrue(result.contains("SPREAD="), "should contain SPREAD");
+    @DisplayName("fetchSalaryRange: result contains MIN, MAX, and RANGE")
+    void fetchSalaryRange_containsAllComponents() {
+        String result = ex.fetchSalaryRange("ENGINEERING").join();
+        assertTrue(result.contains("MIN="),    "should contain MIN");
+        assertTrue(result.contains("MAX="),    "should contain MAX");
+        assertTrue(result.contains("RANGE="),  "should contain RANGE");
     }
 
-    // ---- enrichTradesBatch --------------------------------------------------
+    // ---- enrichEmployeesBatch --------------------------------------------------
 
     @Test
-    @DisplayName("enrichTradesBatch: all trades are enriched")
-    void enrichTradesBatch_allTradesEnriched() {
-        var ids    = List.of("T1", "T2", "T3");
-        var result = ex.enrichTradesBatch(ids);
+    @DisplayName("enrichEmployeesBatch: all employees are enriched")
+    void enrichEmployeesBatch_allEmployeesEnriched() {
+        var ids    = List.of("E1", "E2", "E3");
+        var result = ex.enrichEmployeesBatch(ids);
         assertEquals(3, result.size());
-        assertTrue(result.contains("T1:ENRICHED"), "T1 should be enriched");
-        assertTrue(result.contains("T2:ENRICHED"), "T2 should be enriched");
-        assertTrue(result.contains("T3:ENRICHED"), "T3 should be enriched");
+        assertTrue(result.contains("E1:ENRICHED"), "E1 should be enriched");
+        assertTrue(result.contains("E2:ENRICHED"), "E2 should be enriched");
+        assertTrue(result.contains("E3:ENRICHED"), "E3 should be enriched");
     }
 
     @Test
-    @DisplayName("enrichTradesBatch: empty list returns empty result")
-    void enrichTradesBatch_emptyList_returnsEmpty() {
-        assertTrue(ex.enrichTradesBatch(List.of()).isEmpty());
+    @DisplayName("enrichEmployeesBatch: empty list returns empty result")
+    void enrichEmployeesBatch_emptyList_returnsEmpty() {
+        assertTrue(ex.enrichEmployeesBatch(List.of()).isEmpty());
     }
 
     // ---- fetchWithFallback --------------------------------------------------
@@ -80,8 +80,8 @@ class CompletableFutureExamplesTest {
     @Test
     @DisplayName("fetchWithFallback: valid id returns enriched result")
     void fetchWithFallback_validId_returnsEnriched() {
-        String result = ex.fetchWithFallback("T001").join();
-        assertEquals("ENRICHED:T001", result);
+        String result = ex.fetchWithFallback("E001").join();
+        assertEquals("ENRICHED:E001", result);
     }
 
     @Test
@@ -103,8 +103,8 @@ class CompletableFutureExamplesTest {
     @Test
     @DisplayName("fetchWithHandle: valid id returns OK result")
     void fetchWithHandle_validId_returnsOk() {
-        String result = ex.fetchWithHandle("T001").join();
-        assertEquals("OK[DATA:T001]", result);
+        String result = ex.fetchWithHandle("E001").join();
+        assertEquals("OK[DATA:E001]", result);
     }
 
     @Test
@@ -124,14 +124,14 @@ class CompletableFutureExamplesTest {
         assertEquals("DONE", cf.get());
     }
 
-    // ---- simulatePriceFetch helper ------------------------------------------
+    // ---- simulateSalaryFetch helper ------------------------------------------
 
     @Test
-    @DisplayName("simulatePriceFetch: returns deterministic prices for known symbols")
-    void simulatePriceFetch_deterministicForKnownSymbols() {
-        assertEquals(182.50, ex.simulatePriceFetch("AAPL"), 0.001);
-        assertEquals(415.00, ex.simulatePriceFetch("MSFT"), 0.001);
-        assertEquals(172.30, ex.simulatePriceFetch("GOOG"), 0.001);
-        assertEquals(100.00, ex.simulatePriceFetch("UNKNOWN"), 0.001);
+    @DisplayName("simulateSalaryFetch: returns deterministic salaries for known departments")
+    void simulateSalaryFetch_deterministicForKnownDepartments() {
+        assertEquals(85_000, ex.simulateSalaryFetch("ENGINEERING"), 0.001);
+        assertEquals(75_000, ex.simulateSalaryFetch("MARKETING"),   0.001);
+        assertEquals(80_000, ex.simulateSalaryFetch("SALES"),        0.001);
+        assertEquals(70_000, ex.simulateSalaryFetch("UNKNOWN"),      0.001);
     }
 }

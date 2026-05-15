@@ -14,56 +14,56 @@ import static org.junit.jupiter.api.Assertions.*;
 class StreamExamplesTest {
 
     private StreamExamples ex;
-    private List<StreamExamples.Trade> trades;
+    private List<StreamExamples.Employee> employees;
 
     @BeforeEach
     void setUp() {
         ex = new StreamExamples();
-        trades = Arrays.asList(
-                new StreamExamples.Trade("T001", "AAPL",   500_000, "EXECUTED"),
-                new StreamExamples.Trade("T002", "MSFT", 1_200_000, "PENDING"),
-                new StreamExamples.Trade("T003", "AAPL",   800_000, "EXECUTED"),
-                new StreamExamples.Trade("T004", "GOOG", 3_000_000, "EXECUTED"),
-                new StreamExamples.Trade("T005", "MSFT",   200_000, "REJECTED")
+        employees = Arrays.asList(
+                new StreamExamples.Employee("E001", "Alice",   "ENGINEERING", 500_000, "ACTIVE"),
+                new StreamExamples.Employee("E002", "Bob",     "MARKETING", 1_200_000, "ONBOARDING"),
+                new StreamExamples.Employee("E003", "Charlie", "ENGINEERING", 800_000, "ACTIVE"),
+                new StreamExamples.Employee("E004", "Diana",   "SALES",    3_000_000, "ACTIVE"),
+                new StreamExamples.Employee("E005", "Eve",     "MARKETING",  200_000, "RESIGNED")
         );
     }
 
     @Test
-    @DisplayName("Before: imperative sum of EXECUTED notional")
-    void sumExecutedNotional_Before() {
-        assertEquals(4_300_000.0, ex.sumExecutedNotional_Before(trades));
+    @DisplayName("Before: imperative sum of ACTIVE salary")
+    void sumActiveSalary_Before() {
+        assertEquals(4_300_000.0, ex.sumActiveSalary_Before(employees));
     }
 
     @Test
     @DisplayName("After: stream sum matches imperative sum")
-    void sumExecutedNotional_After_matchesBefore() {
+    void sumActiveSalary_After_matchesBefore() {
         assertEquals(
-                ex.sumExecutedNotional_Before(trades),
-                ex.sumExecutedNotional_After(trades));
+                ex.sumActiveSalary_Before(employees),
+                ex.sumActiveSalary_After(employees));
     }
 
     @Test
-    @DisplayName("Before: imperative distinct sorted symbols")
-    void distinctSortedSymbols_Before() {
-        List<String> result = ex.distinctSortedSymbols_Before(trades);
-        assertEquals(List.of("AAPL", "GOOG", "MSFT"), result);
+    @DisplayName("Before: imperative distinct sorted departments")
+    void distinctSortedDepartments_Before() {
+        List<String> result = ex.distinctSortedDepartments_Before(employees);
+        assertEquals(List.of("ENGINEERING", "MARKETING", "SALES"), result);
     }
 
     @Test
-    @DisplayName("After: stream distinct sorted symbols matches before")
-    void distinctSortedSymbols_After_matchesBefore() {
+    @DisplayName("After: stream distinct sorted departments matches before")
+    void distinctSortedDepartments_After_matchesBefore() {
         assertEquals(
-                ex.distinctSortedSymbols_Before(trades),
-                ex.distinctSortedSymbols_After(trades));
+                ex.distinctSortedDepartments_Before(employees),
+                ex.distinctSortedDepartments_After(employees));
     }
 
     @Test
-    @DisplayName("groupByStatus returns correct group sizes")
-    void groupByStatus_After_correctGroupSizes() {
-        Map<String, List<StreamExamples.Trade>> grouped = ex.groupByStatus_After(trades);
-        assertEquals(3, grouped.get("EXECUTED").size());
-        assertEquals(1, grouped.get("PENDING").size());
-        assertEquals(1, grouped.get("REJECTED").size());
+    @DisplayName("groupByDepartment returns correct group sizes")
+    void groupByDepartment_After_correctGroupSizes() {
+        Map<String, List<StreamExamples.Employee>> grouped = ex.groupByDepartment_After(employees);
+        assertEquals(2, grouped.get("ENGINEERING").size());
+        assertEquals(2, grouped.get("MARKETING").size());
+        assertEquals(1, grouped.get("SALES").size());
     }
 
     @Test
@@ -78,66 +78,66 @@ class StreamExamplesTest {
     }
 
     @Test
-    @DisplayName("countPending returns correct count")
-    void countPending_returnsOne() {
-        assertEquals(1, ex.countPending(trades));
+    @DisplayName("countInactive returns correct count")
+    void countInactive_returnsOne() {
+        assertEquals(1, ex.countInactive(employees));
     }
 
     @Test
-    @DisplayName("anyMatch: hasHighValueTrade detects 15M GOOG trade")
-    void hasHighValueTrade_detectsGoogTrade() {
-        List<StreamExamples.Trade> withHighValue = Arrays.asList(
-                new StreamExamples.Trade("T001", "AAPL",   500_000, "EXECUTED"),
-                new StreamExamples.Trade("T004", "GOOG", 15_000_000, "EXECUTED") // >10M
+    @DisplayName("anyMatch: hasHighSalary detects 15M salary")
+    void hasHighSalary_detectsHighSalary() {
+        List<StreamExamples.Employee> withHighSalary = Arrays.asList(
+                new StreamExamples.Employee("E001", "Alice", "ENGINEERING",   500_000, "ACTIVE"),
+                new StreamExamples.Employee("E004", "Diana", "SALES",      15_000_000, "ACTIVE") // >10M
         );
-        assertTrue(ex.hasHighValueTrade(withHighValue));
+        assertTrue(ex.hasHighSalary(withHighSalary));
     }
 
     @Test
-    @DisplayName("anyMatch: no high-value trade when all are small")
-    void hasHighValueTrade_allSmall_returnsFalse() {
-        List<StreamExamples.Trade> small = List.of(
-                new StreamExamples.Trade("T1", "X", 50_000, "EXECUTED"));
-        assertFalse(ex.hasHighValueTrade(small));
+    @DisplayName("anyMatch: no high salary when all are small")
+    void hasHighSalary_allSmall_returnsFalse() {
+        List<StreamExamples.Employee> small = List.of(
+                new StreamExamples.Employee("E1", "Alice", "ENGINEERING", 50_000, "ACTIVE"));
+        assertFalse(ex.hasHighSalary(small));
     }
 
     @Test
-    @DisplayName("allMatch: not all trades are executed")
-    void allTradesExecuted_returnsFalse_whenMixed() {
-        assertFalse(ex.allTradesExecuted(trades));
+    @DisplayName("allMatch: not all employees are active")
+    void allEmployeesActive_returnsFalse_whenMixed() {
+        assertFalse(ex.allEmployeesActive(employees));
     }
 
     @Test
-    @DisplayName("allMatch: true when every trade is executed")
-    void allTradesExecuted_returnsTrue_whenAllExecuted() {
-        List<StreamExamples.Trade> allExecuted = List.of(
-                new StreamExamples.Trade("T1", "AAPL", 100_000, "EXECUTED"),
-                new StreamExamples.Trade("T2", "MSFT", 200_000, "EXECUTED")
+    @DisplayName("allMatch: true when every employee is active")
+    void allEmployeesActive_returnsTrue_whenAllActive() {
+        List<StreamExamples.Employee> allActive = List.of(
+                new StreamExamples.Employee("E1", "Alice", "ENGINEERING", 100_000, "ACTIVE"),
+                new StreamExamples.Employee("E2", "Bob",   "MARKETING",   200_000, "ACTIVE")
         );
-        assertTrue(ex.allTradesExecuted(allExecuted));
+        assertTrue(ex.allEmployeesActive(allActive));
     }
 
     @Test
-    @DisplayName("joining: tradeIdsCsv produces comma-separated IDs")
-    void tradeIdsCsv_correctFormat() {
-        String csv = ex.tradeIdsCsv(trades);
-        assertTrue(csv.contains("T001"));
-        assertTrue(csv.contains("T002"));
+    @DisplayName("joining: employeeIdsCsv produces comma-separated IDs")
+    void employeeIdsCsv_correctFormat() {
+        String csv = ex.employeeIdsCsv(employees);
+        assertTrue(csv.contains("E001"));
+        assertTrue(csv.contains("E002"));
         assertTrue(csv.contains(", "));
     }
 
     @Test
     @DisplayName("toMap: indexById produces correct map")
     void indexById_correctMap() {
-        Map<String, StreamExamples.Trade> map = ex.indexById(trades);
+        Map<String, StreamExamples.Employee> map = ex.indexById(employees);
         assertEquals(5, map.size());
-        assertEquals("AAPL", map.get("T001").symbol());
-        assertEquals("GOOG", map.get("T004").symbol());
+        assertEquals("ENGINEERING", map.get("E001").department());
+        assertEquals("SALES",       map.get("E004").department());
     }
 
     @Test
-    @DisplayName("totalNotional: sum of all notionals")
-    void totalNotional_sumsAll() {
-        assertEquals(5_700_000.0, ex.totalNotional(trades));
+    @DisplayName("totalSalary: sum of all salaries")
+    void totalSalary_sumsAll() {
+        assertEquals(5_700_000.0, ex.totalSalary(employees));
     }
 }

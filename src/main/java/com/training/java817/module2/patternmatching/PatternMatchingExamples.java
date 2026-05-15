@@ -46,11 +46,11 @@ public class PatternMatchingExamples {
 
     public sealed interface AuditEvent
             permits PatternMatchingExamples.LoginEvent,
-                    PatternMatchingExamples.TradeEvent,
+                    PatternMatchingExamples.PayrollEvent,
                     PatternMatchingExamples.AlertEvent {}
 
     public record LoginEvent(String userId, String ipAddress, boolean success) implements AuditEvent {}
-    public record TradeEvent(String tradeId, String symbol, double amount)     implements AuditEvent {}
+    public record PayrollEvent(String employeeId, String department, double amount) implements AuditEvent {}
     public record AlertEvent(String alertCode, String severity, String message) implements AuditEvent {}
 
     // =========================================================================
@@ -61,9 +61,9 @@ public class PatternMatchingExamples {
         if (event instanceof LoginEvent) {
             LoginEvent le = (LoginEvent) event;      // redundant cast
             return "LOGIN | user=" + le.userId() + " success=" + le.success();
-        } else if (event instanceof TradeEvent) {
-            TradeEvent te = (TradeEvent) event;      // redundant cast
-            return "TRADE | id=" + te.tradeId() + " amount=" + te.amount();
+        } else if (event instanceof PayrollEvent) {
+            PayrollEvent pe = (PayrollEvent) event;  // redundant cast
+            return "PAYROLL | id=" + pe.employeeId() + " amount=" + pe.amount();
         } else if (event instanceof AlertEvent) {
             AlertEvent ae = (AlertEvent) event;      // redundant cast
             return "ALERT | " + ae.severity() + " : " + ae.message();
@@ -79,8 +79,8 @@ public class PatternMatchingExamples {
     public String describeEvent_After(Object event) {
         if (event instanceof LoginEvent le) {
             return "LOGIN | user=" + le.userId() + " success=" + le.success();
-        } else if (event instanceof TradeEvent te) {
-            return "TRADE | id=" + te.tradeId() + " amount=" + te.amount();
+        } else if (event instanceof PayrollEvent pe) {
+            return "PAYROLL | id=" + pe.employeeId() + " amount=" + pe.amount();
         } else if (event instanceof AlertEvent ae) {
             return "ALERT | " + ae.severity() + " : " + ae.message();
         } else {
@@ -92,13 +92,13 @@ public class PatternMatchingExamples {
     // Guard conditions with && (the binding is in scope on the right of &&)
     // =========================================================================
 
-    public String describeHighValueTrade(Object event) {
-        if (event instanceof TradeEvent te && te.amount() > 1_000_000) {
-            return "HIGH-VALUE TRADE: " + te.tradeId() + " = " + te.amount();
-        } else if (event instanceof TradeEvent te) {
-            return "Standard trade: " + te.tradeId();
+    public String describeHighSalaryEvent(Object event) {
+        if (event instanceof PayrollEvent pe && pe.amount() > 100_000) {
+            return "HIGH-SALARY PAYROLL: " + pe.employeeId() + " = " + pe.amount();
+        } else if (event instanceof PayrollEvent pe) {
+            return "Standard payroll: " + pe.employeeId();
         }
-        return "Not a trade event";
+        return "Not a payroll event";
     }
 
     // =========================================================================
@@ -118,8 +118,8 @@ public class PatternMatchingExamples {
         for (AuditEvent event : events) {
             if (event instanceof LoginEvent le && !le.success()) {
                 System.out.println("SECURITY ALERT: Failed login from " + le.ipAddress());
-            } else if (event instanceof TradeEvent te && te.amount() > 5_000_000) {
-                System.out.println("COMPLIANCE ALERT: Large trade " + te.tradeId());
+            } else if (event instanceof PayrollEvent pe && pe.amount() > 500_000) {
+                System.out.println("COMPLIANCE ALERT: Large payroll " + pe.employeeId());
             } else if (event instanceof AlertEvent ae && "CRITICAL".equals(ae.severity())) {
                 System.out.println("CRITICAL ALERT: " + ae.message());
             } else {
@@ -151,8 +151,8 @@ public class PatternMatchingExamples {
 
         Object[] events = {
             new LoginEvent("alice", "10.0.0.1", true),
-            new TradeEvent("T001", "AAPL", 2_500_000),
-            new AlertEvent("A001", "CRITICAL", "Circuit breaker tripped"),
+            new PayrollEvent("E001", "ENGINEERING", 95_000),
+            new AlertEvent("A001", "CRITICAL", "System alert triggered"),
             "Not an event"
         };
 
@@ -166,8 +166,8 @@ public class PatternMatchingExamples {
             System.out.println(ex.describeEvent_After(e));
         }
 
-        System.out.println("=== HIGH VALUE ===");
-        System.out.println(ex.describeHighValueTrade(new TradeEvent("T002", "MSFT", 500_000)));
-        System.out.println(ex.describeHighValueTrade(new TradeEvent("T003", "GOOG", 5_000_000)));
+        System.out.println("=== HIGH SALARY ===");
+        System.out.println(ex.describeHighSalaryEvent(new PayrollEvent("E002", "MARKETING", 80_000)));
+        System.out.println(ex.describeHighSalaryEvent(new PayrollEvent("E003", "FINANCE", 150_000)));
     }
 }

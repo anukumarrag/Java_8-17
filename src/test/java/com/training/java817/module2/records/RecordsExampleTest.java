@@ -12,9 +12,9 @@ class RecordsExampleTest {
 
     private static final LocalDate TODAY = LocalDate.of(2024, 6, 1);
 
-    private RecordsExample.TradeDetailsRecord sample() {
-        return new RecordsExample.TradeDetailsRecord(
-                "T001", "AAPL", 2_000_000.0, "CP01", TODAY, "EXECUTED");
+    private RecordsExample.EmployeeRecord sample() {
+        return new RecordsExample.EmployeeRecord(
+                "E001", "Alice", 2_000_000.0, "D01", TODAY, "ACTIVE");
     }
 
     // --- Auto-generated accessors ---
@@ -22,13 +22,13 @@ class RecordsExampleTest {
     @Test
     @DisplayName("Accessors: record accessors return correct values")
     void accessors_returnCorrectValues() {
-        RecordsExample.TradeDetailsRecord r = sample();
-        assertEquals("T001",       r.tradeId());
-        assertEquals("AAPL",       r.symbol());
-        assertEquals(2_000_000.0,  r.notional());
-        assertEquals("CP01",       r.counterpartyId());
-        assertEquals(TODAY,        r.settlementDate());
-        assertEquals("EXECUTED",   r.status());
+        RecordsExample.EmployeeRecord r = sample();
+        assertEquals("E001",       r.id());
+        assertEquals("Alice",      r.name());
+        assertEquals(2_000_000.0,  r.salary());
+        assertEquals("D01",        r.departmentId());
+        assertEquals(TODAY,        r.hireDate());
+        assertEquals("ACTIVE",     r.status());
     }
 
     // --- Auto-generated equals/hashCode ---
@@ -40,10 +40,10 @@ class RecordsExampleTest {
     }
 
     @Test
-    @DisplayName("Equality: records with different notional are not equal")
-    void equality_differentNotional_notEqual() {
-        RecordsExample.TradeDetailsRecord r2 = new RecordsExample.TradeDetailsRecord(
-                "T001", "AAPL", 3_000_000.0, "CP01", TODAY, "EXECUTED");
+    @DisplayName("Equality: records with different salary are not equal")
+    void equality_differentSalary_notEqual() {
+        RecordsExample.EmployeeRecord r2 = new RecordsExample.EmployeeRecord(
+                "E001", "Alice", 3_000_000.0, "D01", TODAY, "ACTIVE");
         assertNotEquals(sample(), r2);
     }
 
@@ -59,54 +59,54 @@ class RecordsExampleTest {
     @DisplayName("toString: contains field values")
     void toString_containsFieldValues() {
         String str = sample().toString();
-        assertTrue(str.contains("T001"));
-        assertTrue(str.contains("AAPL"));
+        assertTrue(str.contains("E001"));
+        assertTrue(str.contains("Alice"));
         assertTrue(str.contains("2000000.0"));
     }
 
     // --- Compact constructor validation ---
 
     @Test
-    @DisplayName("Compact constructor: null tradeId throws NullPointerException")
-    void compactConstructor_nullTradeId_throws() {
+    @DisplayName("Compact constructor: null id throws NullPointerException")
+    void compactConstructor_nullId_throws() {
         assertThrows(NullPointerException.class, () ->
-                new RecordsExample.TradeDetailsRecord(
-                        null, "AAPL", 1_000.0, "CP01", TODAY, "DRAFT"));
+                new RecordsExample.EmployeeRecord(
+                        null, "Alice", 50_000.0, "D01", TODAY, "ACTIVE"));
     }
 
     @Test
-    @DisplayName("Compact constructor: negative notional throws IllegalArgumentException")
-    void compactConstructor_negativeNotional_throws() {
+    @DisplayName("Compact constructor: negative salary throws IllegalArgumentException")
+    void compactConstructor_negativeSalary_throws() {
         assertThrows(IllegalArgumentException.class, () ->
-                new RecordsExample.TradeDetailsRecord(
-                        "T001", "AAPL", -1.0, "CP01", TODAY, "DRAFT"));
+                new RecordsExample.EmployeeRecord(
+                        "E001", "Alice", -1.0, "D01", TODAY, "ACTIVE"));
     }
 
     // --- Custom method ---
 
     @Test
-    @DisplayName("isHighValue: returns true above 1M")
-    void isHighValue_aboveThreshold_returnsTrue() {
-        assertTrue(sample().isHighValue());
+    @DisplayName("isHighSalary: returns true above 100K")
+    void isHighSalary_aboveThreshold_returnsTrue() {
+        assertTrue(sample().isHighSalary());
     }
 
     @Test
-    @DisplayName("isHighValue: returns false at or below 1M")
-    void isHighValue_belowThreshold_returnsFalse() {
-        RecordsExample.TradeDetailsRecord r = new RecordsExample.TradeDetailsRecord(
-                "T002", "MSFT", 500_000.0, "CP02", TODAY, "DRAFT");
-        assertFalse(r.isHighValue());
+    @DisplayName("isHighSalary: returns false at or below 100K")
+    void isHighSalary_belowThreshold_returnsFalse() {
+        RecordsExample.EmployeeRecord r = new RecordsExample.EmployeeRecord(
+                "E002", "Bob", 50_000.0, "D02", TODAY, "ACTIVE");
+        assertFalse(r.isHighSalary());
     }
 
     // --- Static factory ---
 
     @Test
-    @DisplayName("draft factory: sets status to DRAFT and settlementDate to today")
-    void draftFactory_setsCorrectDefaults() {
-        RecordsExample.TradeDetailsRecord draft =
-                RecordsExample.TradeDetailsRecord.draft("T003", "GOOG", 500_000, "CP03");
-        assertEquals("DRAFT", draft.status());
-        assertEquals(LocalDate.now(), draft.settlementDate());
+    @DisplayName("pending factory: sets status to ONBOARDING and hireDate to today")
+    void pendingFactory_setsCorrectDefaults() {
+        RecordsExample.EmployeeRecord pending =
+                RecordsExample.EmployeeRecord.pending("E003", "Charlie", 80_000, "D03");
+        assertEquals("ONBOARDING", pending.status());
+        assertEquals(LocalDate.now(), pending.hireDate());
     }
 
     // --- POJO comparison (same logical data) ---
@@ -114,27 +114,27 @@ class RecordsExampleTest {
     @Test
     @DisplayName("POJO and record contain the same data for the same inputs")
     void pojoAndRecord_containSameData() {
-        RecordsExample.TradeDetailsPojo pojo = new RecordsExample.TradeDetailsPojo(
-                "T001", "AAPL", 2_000_000.0, "CP01", TODAY, "EXECUTED");
-        RecordsExample.TradeDetailsRecord record = sample();
+        RecordsExample.EmployeePojo pojo = new RecordsExample.EmployeePojo(
+                "E001", "Alice", 2_000_000.0, "D01", TODAY, "ACTIVE");
+        RecordsExample.EmployeeRecord record = sample();
 
-        assertEquals(pojo.getTradeId(),        record.tradeId());
-        assertEquals(pojo.getSymbol(),         record.symbol());
-        assertEquals(pojo.getNotional(),       record.notional());
-        assertEquals(pojo.getCounterpartyId(), record.counterpartyId());
-        assertEquals(pojo.getStatus(),         record.status());
+        assertEquals(pojo.getId(),           record.id());
+        assertEquals(pojo.getName(),         record.name());
+        assertEquals(pojo.getSalary(),       record.salary());
+        assertEquals(pojo.getDepartmentId(), record.departmentId());
+        assertEquals(pojo.getStatus(),       record.status());
     }
 
-    // --- AuditedTrade implements interface ---
+    // --- AuditedEmployee implements interface ---
 
     @Test
-    @DisplayName("AuditedTrade: auditSummary contains tradeId, action, and performer")
-    void auditedTrade_summaryContainsDetails() {
-        RecordsExample.AuditedTrade audit =
-                new RecordsExample.AuditedTrade("T001", "EXECUTE", "john.doe");
+    @DisplayName("AuditedEmployee: auditSummary contains employeeId, action, and performer")
+    void auditedEmployee_summaryContainsDetails() {
+        RecordsExample.AuditedEmployee audit =
+                new RecordsExample.AuditedEmployee("E001", "PROMOTE", "john.doe");
         String summary = audit.auditSummary();
-        assertTrue(summary.contains("T001"));
-        assertTrue(summary.contains("EXECUTE"));
+        assertTrue(summary.contains("E001"));
+        assertTrue(summary.contains("PROMOTE"));
         assertTrue(summary.contains("john.doe"));
     }
 }

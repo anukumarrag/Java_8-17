@@ -36,51 +36,51 @@ public class SealedClassesExample {
     // BEFORE – Open interface: any class can implement it (no control)
     // =========================================================================
 
-    public interface TradeEvent_Before {
-        String tradeId();
+    public interface EmployeeEvent_Before {
+        String employeeId();
         String eventType();
     }
 
-    // Nothing stops an external class from implementing TradeEvent_Before.
+    // Nothing stops an external class from implementing EmployeeEvent_Before.
     // The switch statement below requires a default because the compiler
     // cannot know all implementations.
 
-    public String handleEvent_Before(TradeEvent_Before event) {
-        if (event instanceof TradeCreated_Before) {
-            return "Created: " + event.tradeId();
-        } else if (event instanceof TradeExecuted_Before) {
-            return "Executed: " + event.tradeId();
-        } else if (event instanceof TradeRejected_Before) {
-            return "Rejected: " + event.tradeId();
+    public String handleEvent_Before(EmployeeEvent_Before event) {
+        if (event instanceof EmployeeHired_Before) {
+            return "Hired: " + event.employeeId();
+        } else if (event instanceof EmployeePromoted_Before) {
+            return "Promoted: " + event.employeeId();
+        } else if (event instanceof EmployeeTerminated_Before) {
+            return "Terminated: " + event.employeeId();
         } else {
             // Forced defensive default – might silently miss new event types!
             return "Unknown event";
         }
     }
 
-    public static class TradeCreated_Before  implements TradeEvent_Before {
-        private final String tradeId;
-        public TradeCreated_Before(String id) { this.tradeId = id; }
-        @Override public String tradeId()    { return tradeId; }
-        @Override public String eventType()  { return "CREATED"; }
+    public static class EmployeeHired_Before implements EmployeeEvent_Before {
+        private final String employeeId;
+        public EmployeeHired_Before(String id) { this.employeeId = id; }
+        @Override public String employeeId()  { return employeeId; }
+        @Override public String eventType()   { return "HIRED"; }
     }
 
-    public static class TradeExecuted_Before implements TradeEvent_Before {
-        private final String tradeId;
-        public TradeExecuted_Before(String id) { this.tradeId = id; }
-        @Override public String tradeId()    { return tradeId; }
-        @Override public String eventType()  { return "EXECUTED"; }
+    public static class EmployeePromoted_Before implements EmployeeEvent_Before {
+        private final String employeeId;
+        public EmployeePromoted_Before(String id) { this.employeeId = id; }
+        @Override public String employeeId()  { return employeeId; }
+        @Override public String eventType()   { return "PROMOTED"; }
     }
 
-    public static class TradeRejected_Before implements TradeEvent_Before {
-        private final String tradeId;
+    public static class EmployeeTerminated_Before implements EmployeeEvent_Before {
+        private final String employeeId;
         private final String reason;
-        public TradeRejected_Before(String id, String reason) {
-            this.tradeId = id; this.reason = reason;
+        public EmployeeTerminated_Before(String id, String reason) {
+            this.employeeId = id; this.reason = reason;
         }
-        @Override public String tradeId()    { return tradeId; }
-        @Override public String eventType()  { return "REJECTED"; }
-        public String reason()               { return reason; }
+        @Override public String employeeId()  { return employeeId; }
+        @Override public String eventType()   { return "TERMINATED"; }
+        public String reason()                { return reason; }
     }
 
     // =========================================================================
@@ -94,63 +94,63 @@ public class SealedClassesExample {
      * Records are perfect permitted subtypes: they are final by default,
      * and they give us free equals/hashCode/toString.
      */
-    public sealed interface TradeEvent
-            permits TradeCreated, TradeUpdated, TradeExecuted, TradeRejected {
-        String tradeId();
+    public sealed interface EmployeeEvent
+            permits EmployeeHired, EmployeeUpdated, EmployeePromoted, EmployeeTerminated {
+        String employeeId();
     }
 
     /** final record – cannot be sub-classed further. */
-    public record TradeCreated(String tradeId, String symbol, double notional)
-            implements TradeEvent {}
+    public record EmployeeHired(String employeeId, String name, double salary)
+            implements EmployeeEvent {}
 
-    public record TradeUpdated(String tradeId, double newNotional)
-            implements TradeEvent {}
+    public record EmployeeUpdated(String employeeId, double newSalary)
+            implements EmployeeEvent {}
 
-    public record TradeExecuted(String tradeId, String executionVenue, double executedPrice)
-            implements TradeEvent {}
+    public record EmployeePromoted(String employeeId, String newTitle, double newSalary)
+            implements EmployeeEvent {}
 
-    public record TradeRejected(String tradeId, String rejectionReason)
-            implements TradeEvent {}
+    public record EmployeeTerminated(String employeeId, String terminationReason)
+            implements EmployeeEvent {}
 
     // =========================================================================
     // Sealed class hierarchy (not interface)
     // =========================================================================
 
     /**
-     * TradeState models the lifecycle of a trade as a sealed class tree.
+     * EmployeeState models the lifecycle of an employee as a sealed class tree.
      * Each state carries only the data relevant to that state.
      */
-    public abstract sealed class TradeState
-            permits TradeState.Draft, TradeState.Pending, TradeState.Settled,
-                    TradeState.Cancelled {
+    public abstract sealed class EmployeeState
+            permits EmployeeState.Applied, EmployeeState.Onboarding,
+                    EmployeeState.Active, EmployeeState.Resigned {
 
         public abstract String stateLabel();
 
-        public final class Draft extends TradeState {
-            private final String symbol;
-            public Draft(String symbol) { this.symbol = symbol; }
-            @Override public String stateLabel() { return "DRAFT[" + symbol + "]"; }
-            public String symbol() { return symbol; }
+        public final class Applied extends EmployeeState {
+            private final String name;
+            public Applied(String name) { this.name = name; }
+            @Override public String stateLabel() { return "APPLIED[" + name + "]"; }
+            public String name() { return name; }
         }
 
-        public final class Pending extends TradeState {
-            private final String confirmationRef;
-            public Pending(String ref) { this.confirmationRef = ref; }
-            @Override public String stateLabel() { return "PENDING[" + confirmationRef + "]"; }
-            public String confirmationRef() { return confirmationRef; }
+        public final class Onboarding extends EmployeeState {
+            private final String referenceCode;
+            public Onboarding(String ref) { this.referenceCode = ref; }
+            @Override public String stateLabel() { return "ONBOARDING[" + referenceCode + "]"; }
+            public String referenceCode() { return referenceCode; }
         }
 
-        public final class Settled extends TradeState {
-            private final double settledAmount;
-            public Settled(double amount) { this.settledAmount = amount; }
-            @Override public String stateLabel() { return "SETTLED[" + settledAmount + "]"; }
-            public double settledAmount() { return settledAmount; }
+        public final class Active extends EmployeeState {
+            private final double confirmedSalary;
+            public Active(double salary) { this.confirmedSalary = salary; }
+            @Override public String stateLabel() { return "ACTIVE[" + confirmedSalary + "]"; }
+            public double confirmedSalary() { return confirmedSalary; }
         }
 
-        public final class Cancelled extends TradeState {
+        public final class Resigned extends EmployeeState {
             private final String reason;
-            public Cancelled(String reason) { this.reason = reason; }
-            @Override public String stateLabel() { return "CANCELLED[" + reason + "]"; }
+            public Resigned(String reason) { this.reason = reason; }
+            @Override public String stateLabel() { return "RESIGNED[" + reason + "]"; }
             public String reason() { return reason; }
         }
     }
@@ -163,16 +163,17 @@ public class SealedClassesExample {
      * Java 17: use instanceof pattern matching with if-else.
      * Java 21 (future): switch expressions become fully exhaustive for sealed types.
      */
-    public String describeEvent(TradeEvent event) {
-        if (event instanceof TradeCreated c) {
-            return "New trade created: symbol=%s, notional=%.2f"
-                    .formatted(c.symbol(), c.notional());
-        } else if (event instanceof TradeUpdated u) {
-            return "Trade updated: new notional=%.2f".formatted(u.newNotional());
-        } else if (event instanceof TradeExecuted e) {
-            return "Trade executed at %s on %s".formatted(e.executedPrice(), e.executionVenue());
-        } else if (event instanceof TradeRejected r) {
-            return "Trade rejected: " + r.rejectionReason();
+    public String describeEvent(EmployeeEvent event) {
+        if (event instanceof EmployeeHired h) {
+            return "New employee hired: name=%s, salary=%.2f"
+                    .formatted(h.name(), h.salary());
+        } else if (event instanceof EmployeeUpdated u) {
+            return "Employee updated: new salary=%.2f".formatted(u.newSalary());
+        } else if (event instanceof EmployeePromoted p) {
+            return "Employee promoted to %s with salary=%.2f"
+                    .formatted(p.newTitle(), p.newSalary());
+        } else if (event instanceof EmployeeTerminated t) {
+            return "Employee terminated: " + t.terminationReason();
         }
         // With a sealed interface the compiler guarantees we never reach here.
         throw new IllegalStateException("Unexpected event type: " + event);
@@ -182,14 +183,14 @@ public class SealedClassesExample {
     public static void main(String[] args) {
         SealedClassesExample ex = new SealedClassesExample();
 
-        TradeEvent[] events = {
-            new TradeCreated("T001", "AAPL", 500_000),
-            new TradeExecuted("T001", "NYSE", 182.50),
-            new TradeRejected("T002", "Insufficient funds"),
-            new TradeUpdated("T003", 750_000)
+        EmployeeEvent[] events = {
+            new EmployeeHired("E001", "Alice", 85_000),
+            new EmployeePromoted("E001", "SENIOR_ENGINEER", 100_000),
+            new EmployeeTerminated("E002", "Voluntary resignation"),
+            new EmployeeUpdated("E003", 90_000)
         };
 
-        for (TradeEvent e : events) {
+        for (EmployeeEvent e : events) {
             System.out.println(ex.describeEvent(e));
         }
     }

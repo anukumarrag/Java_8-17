@@ -47,36 +47,36 @@ import java.util.Set;
  */
 public class CollectionEnhancementsExamples {
 
-    public record Trade(String id, String symbol, double notional, String status) {}
+    public record Employee(String id, String name, String department, double salary, String status) {}
 
     // =========================================================================
     // BEFORE – Java 7 Map patterns
     // =========================================================================
 
     /** getOrDefault – before: manual null check. */
-    public int getTradeCount_Before(Map<String, Integer> counts, String symbol) {
-        Integer count = counts.get(symbol);
+    public int getEmployeeCount_Before(Map<String, Integer> counts, String department) {
+        Integer count = counts.get(department);
         return count != null ? count : 0;
     }
 
     /** computeIfAbsent (multimap) – before: manual check + new list creation. */
-    public Map<String, List<Trade>> groupBySymbol_Before(List<Trade> trades) {
-        Map<String, List<Trade>> map = new HashMap<>();
-        for (Trade t : trades) {
-            if (!map.containsKey(t.symbol())) {
-                map.put(t.symbol(), new ArrayList<>());
+    public Map<String, List<Employee>> groupByDepartment_Before(List<Employee> employees) {
+        Map<String, List<Employee>> map = new HashMap<>();
+        for (Employee e : employees) {
+            if (!map.containsKey(e.department())) {
+                map.put(e.department(), new ArrayList<>());
             }
-            map.get(t.symbol()).add(t);
+            map.get(e.department()).add(e);
         }
         return map;
     }
 
     /** merge (frequency count) – before: verbose null-check increment. */
-    public Map<String, Integer> countByStatus_Before(List<Trade> trades) {
+    public Map<String, Integer> countByStatus_Before(List<Employee> employees) {
         Map<String, Integer> counts = new HashMap<>();
-        for (Trade t : trades) {
-            Integer existing = counts.get(t.status());
-            counts.put(t.status(), existing == null ? 1 : existing + 1);
+        for (Employee e : employees) {
+            Integer existing = counts.get(e.status());
+            counts.put(e.status(), existing == null ? 1 : existing + 1);
         }
         return counts;
     }
@@ -86,18 +86,18 @@ public class CollectionEnhancementsExamples {
     // =========================================================================
 
     /** getOrDefault: clean one-liner, no null check needed. */
-    public int getTradeCount_After(Map<String, Integer> counts, String symbol) {
-        return counts.getOrDefault(symbol, 0);
+    public int getEmployeeCount_After(Map<String, Integer> counts, String department) {
+        return counts.getOrDefault(department, 0);
     }
 
     /**
      * computeIfAbsent: creates the list the first time the key is seen.
      * Perfect for building multimap / group-by structures.
      */
-    public Map<String, List<Trade>> groupBySymbol_After(List<Trade> trades) {
-        Map<String, List<Trade>> map = new HashMap<>();
-        for (Trade t : trades) {
-            map.computeIfAbsent(t.symbol(), k -> new ArrayList<>()).add(t);
+    public Map<String, List<Employee>> groupByDepartment_After(List<Employee> employees) {
+        Map<String, List<Employee>> map = new HashMap<>();
+        for (Employee e : employees) {
+            map.computeIfAbsent(e.department(), k -> new ArrayList<>()).add(e);
         }
         return map;
     }
@@ -106,10 +106,10 @@ public class CollectionEnhancementsExamples {
      * merge: if key absent, inserts value; if present, applies remapping function.
      * Ideal for frequency counting and accumulation.
      */
-    public Map<String, Integer> countByStatus_After(List<Trade> trades) {
+    public Map<String, Integer> countByStatus_After(List<Employee> employees) {
         Map<String, Integer> counts = new HashMap<>();
-        for (Trade t : trades) {
-            counts.merge(t.status(), 1, Integer::sum);
+        for (Employee e : employees) {
+            counts.merge(e.status(), 1, Integer::sum);
         }
         return counts;
     }
@@ -121,11 +121,11 @@ public class CollectionEnhancementsExamples {
     }
 
     /** putIfAbsent: safe default initialisation, won't overwrite existing value. */
-    public Map<String, String> registerDefaultDesks(Map<String, String> desks) {
-        desks.putIfAbsent("EQUITY",       "equity-desk@bank.com");
-        desks.putIfAbsent("FIXED_INCOME", "rates-desk@bank.com");
-        desks.putIfAbsent("FOREX",        "fx-desk@bank.com");
-        return desks;
+    public Map<String, String> registerDefaultDepartments(Map<String, String> departments) {
+        departments.putIfAbsent("ENGINEERING", "engineering@company.com");
+        departments.putIfAbsent("MARKETING",   "marketing@company.com");
+        departments.putIfAbsent("HR",          "hr@company.com");
+        return departments;
     }
 
     /** computeIfPresent: update a value only when the key already exists. */
@@ -135,9 +135,9 @@ public class CollectionEnhancementsExamples {
     }
 
     /** replaceAll: transform every value in-place. */
-    public Map<String, String> normaliseSymbols(Map<String, String> symbols) {
-        symbols.replaceAll((key, value) -> value.trim().toUpperCase());
-        return symbols;
+    public Map<String, String> normaliseNames(Map<String, String> names) {
+        names.replaceAll((key, value) -> value.trim().toUpperCase());
+        return names;
     }
 
     // =========================================================================
@@ -145,13 +145,13 @@ public class CollectionEnhancementsExamples {
     // =========================================================================
 
     /** List.of: concise immutable list (replaces Arrays.asList + unmodifiableList). */
-    public List<String> supportedCurrencies() {
-        return List.of("USD", "EUR", "GBP", "JPY", "CHF");
+    public List<String> supportedLocations() {
+        return List.of("LONDON", "NEW_YORK", "BANGALORE", "SINGAPORE", "BERLIN");
     }
 
     /** Set.of: concise immutable set – duplicate elements cause IllegalArgumentException. */
     public Set<String> validStatuses() {
-        return Set.of("DRAFT", "PENDING", "EXECUTED", "SETTLED", "REJECTED");
+        return Set.of("APPLIED", "ONBOARDING", "ACTIVE", "ON_LEAVE", "RESIGNED", "TERMINATED");
     }
 
     /**
@@ -160,34 +160,34 @@ public class CollectionEnhancementsExamples {
      */
     public Map<String, Integer> slaByStatus() {
         return Map.of(
-                "DRAFT",    24,
-                "PENDING",  4,
-                "EXECUTED", 1,
-                "SETTLED",  0
+                "APPLIED",    48,
+                "ONBOARDING", 24,
+                "ACTIVE",     72,
+                "RESIGNED",   0
         );
     }
 
     /**
      * Map.ofEntries: for maps with more than 10 pairs.
      */
-    public Map<String, String> deskRoutingTable() {
+    public Map<String, String> departmentEmailTable() {
         return Map.ofEntries(
-                Map.entry("EQUITY",        "equity-desk@bank.com"),
-                Map.entry("FIXED_INCOME",  "rates-desk@bank.com"),
-                Map.entry("COMMODITY",     "commodity-desk@bank.com"),
-                Map.entry("FOREX",         "fx-desk@bank.com"),
-                Map.entry("DERIVATIVE",    "derivatives-desk@bank.com"),
-                Map.entry("CRYPTO",        "crypto-desk@bank.com"),
-                Map.entry("STRUCTURED",    "structured-desk@bank.com"),
-                Map.entry("REPO",          "repo-desk@bank.com"),
-                Map.entry("INDEX",         "index-desk@bank.com"),
-                Map.entry("ETF",           "etf-desk@bank.com"),
-                Map.entry("OPTION",        "options-desk@bank.com")  // >10 pairs – requires ofEntries
+                Map.entry("ENGINEERING", "engineering@company.com"),
+                Map.entry("MARKETING",   "marketing@company.com"),
+                Map.entry("SALES",       "sales@company.com"),
+                Map.entry("FINANCE",     "finance@company.com"),
+                Map.entry("HR",          "hr@company.com"),
+                Map.entry("LEGAL",       "legal@company.com"),
+                Map.entry("OPERATIONS",  "operations@company.com"),
+                Map.entry("IT",          "it@company.com"),
+                Map.entry("DESIGN",      "design@company.com"),
+                Map.entry("PRODUCT",     "product@company.com"),
+                Map.entry("DATA",        "data@company.com")  // >10 pairs – requires ofEntries
         );
     }
 
     /** List.copyOf / Map.copyOf: produce immutable snapshots of mutable collections. */
-    public List<String> snapshotSymbols(List<String> mutableList) {
+    public List<String> snapshotNames(List<String> mutableList) {
         return List.copyOf(mutableList);   // immutable; reflects state at copy time
     }
 
@@ -200,21 +200,21 @@ public class CollectionEnhancementsExamples {
         CollectionEnhancementsExamples ex = new CollectionEnhancementsExamples();
 
         Map<String, Integer> counts = new HashMap<>();
-        counts.put("AAPL", 5);
-        System.out.println("getOrDefault AAPL : " + ex.getTradeCount_After(counts, "AAPL"));
-        System.out.println("getOrDefault MSFT : " + ex.getTradeCount_After(counts, "MSFT"));
+        counts.put("ENGINEERING", 5);
+        System.out.println("getOrDefault ENGINEERING : " + ex.getEmployeeCount_After(counts, "ENGINEERING"));
+        System.out.println("getOrDefault MARKETING   : " + ex.getEmployeeCount_After(counts, "MARKETING"));
 
-        List<Trade> trades = List.of(
-                new Trade("T1", "AAPL", 100_000, "EXECUTED"),
-                new Trade("T2", "AAPL", 200_000, "PENDING"),
-                new Trade("T3", "MSFT", 300_000, "EXECUTED")
+        List<Employee> employees = List.of(
+                new Employee("E1", "Alice",   "ENGINEERING", 100_000, "ACTIVE"),
+                new Employee("E2", "Bob",     "ENGINEERING", 200_000, "ONBOARDING"),
+                new Employee("E3", "Charlie", "MARKETING",   300_000, "ACTIVE")
         );
-        System.out.println("Group by symbol : " + ex.groupBySymbol_After(trades).keySet());
+        System.out.println("Group by dept   : " + ex.groupByDepartment_After(employees).keySet());
 
-        Map<String, Integer> freq = ex.countByStatus_After(trades);
-        System.out.println("Count EXECUTED  : " + freq.get("EXECUTED"));
+        Map<String, Integer> freq = ex.countByStatus_After(employees);
+        System.out.println("Count ACTIVE    : " + freq.get("ACTIVE"));
 
-        System.out.println("Currencies      : " + ex.supportedCurrencies());
+        System.out.println("Locations       : " + ex.supportedLocations());
         System.out.println("Statuses        : " + ex.validStatuses());
         System.out.println("SLA by status   : " + ex.slaByStatus());
     }

@@ -38,21 +38,21 @@ import java.util.stream.Stream;
  */
 public class StreamEnhancementsExamples {
 
-    public record Trade(String id, String symbol, double notional, String status) {}
+    public record Employee(String id, String name, String department, double salary, String status) {}
 
     // =========================================================================
     // Java 9 – takeWhile
     // =========================================================================
 
     /**
-     * takeWhile: process a sorted price list until a price exceeds the threshold.
+     * takeWhile: process a sorted salary list until a salary exceeds the threshold.
      * Stops as soon as the predicate returns FALSE – unlike filter which scans all.
      *
-     * USE CASE: streaming time-series data sorted by timestamp; stop at cutoff.
+     * USE CASE: streaming time-series data sorted by value; stop at cutoff.
      */
-    public List<Double> pricesBelowCeiling(List<Double> sortedPrices, double ceiling) {
-        return sortedPrices.stream()
-                .takeWhile(price -> price < ceiling)
+    public List<Double> salariesBelowThreshold(List<Double> sortedSalaries, double ceiling) {
+        return sortedSalaries.stream()
+                .takeWhile(salary -> salary < ceiling)
                 .toList();   // Java 16 toList()
     }
 
@@ -61,14 +61,14 @@ public class StreamEnhancementsExamples {
     // =========================================================================
 
     /**
-     * dropWhile: skip all PENDING trades at the start of a sorted list,
+     * dropWhile: skip all ONBOARDING employees at the start of a sorted list,
      * then process the rest.
      *
      * USE CASE: skip all header/setup records at the beginning of a batch file.
      */
-    public List<Trade> skipLeadingPending(List<Trade> trades) {
-        return trades.stream()
-                .dropWhile(t -> "PENDING".equals(t.status()))
+    public List<Employee> skipLeadingOnboarding(List<Employee> employees) {
+        return employees.stream()
+                .dropWhile(e -> "ONBOARDING".equals(e.status()))
                 .toList();
     }
 
@@ -102,9 +102,9 @@ public class StreamEnhancementsExamples {
      *
      * USE CASE: flat-map a field that may be null in a record, avoiding NPE.
      */
-    public List<String> collectNotes(List<Trade> trades, Map<String, String> tradeNotes) {
-        return trades.stream()
-                .flatMap(t -> Stream.ofNullable(tradeNotes.get(t.id())))  // null → empty stream
+    public List<String> collectNotes(List<Employee> employees, Map<String, String> employeeNotes) {
+        return employees.stream()
+                .flatMap(e -> Stream.ofNullable(employeeNotes.get(e.id())))  // null → empty stream
                 .toList();
     }
 
@@ -125,25 +125,25 @@ public class StreamEnhancementsExamples {
      *
      * USE CASE: compute min and max (or count and sum) in a single pass.
      */
-    public record NotionalStats(double sum, long count) {}
+    public record SalaryStats(double sum, long count) {}
 
-    public NotionalStats computeStats(List<Trade> trades) {
-        return trades.stream()
+    public SalaryStats computeStats(List<Employee> employees) {
+        return employees.stream()
                 .collect(Collectors.teeing(
-                        Collectors.summingDouble(Trade::notional),   // collector 1: sum
+                        Collectors.summingDouble(Employee::salary),  // collector 1: sum
                         Collectors.counting(),                        // collector 2: count
-                        NotionalStats::new                            // merger
+                        SalaryStats::new                              // merger
                 ));
     }
 
-    /** Separate EXECUTED from other statuses in one pass using teeing. */
-    public record PartitionResult(List<Trade> executed, List<Trade> others) {}
+    /** Separate ACTIVE from other statuses in one pass using teeing. */
+    public record PartitionResult(List<Employee> active, List<Employee> others) {}
 
-    public PartitionResult partitionTrades(List<Trade> trades) {
-        return trades.stream()
+    public PartitionResult partitionEmployees(List<Employee> employees) {
+        return employees.stream()
                 .collect(Collectors.teeing(
-                        Collectors.filtering(t -> "EXECUTED".equals(t.status()), Collectors.toList()),
-                        Collectors.filtering(t -> !"EXECUTED".equals(t.status()), Collectors.toList()),
+                        Collectors.filtering(e -> "ACTIVE".equals(e.status()), Collectors.toList()),
+                        Collectors.filtering(e -> !"ACTIVE".equals(e.status()), Collectors.toList()),
                         PartitionResult::new
                 ));
     }
@@ -159,11 +159,11 @@ public class StreamEnhancementsExamples {
      * NOTE: unlike Collectors.toList(), the result of toList() is guaranteed
      * to be unmodifiable. Attempting to add/remove throws UnsupportedOperationException.
      */
-    public List<String> executedSymbols(List<Trade> trades) {
+    public List<String> activeDepartments(List<Employee> employees) {
         // Java 16: .toList() instead of .collect(Collectors.toList())
-        return trades.stream()
-                .filter(t -> "EXECUTED".equals(t.status()))
-                .map(Trade::symbol)
+        return employees.stream()
+                .filter(e -> "ACTIVE".equals(e.status()))
+                .map(Employee::department)
                 .distinct()
                 .toList();
     }
@@ -174,15 +174,15 @@ public class StreamEnhancementsExamples {
 
     /**
      * Real-world pipeline:
-     * - Drop any leading DRAFT trades (batch might have them at the start)
-     * - Take only while below a notional threshold (risk limit)
-     * - Collect distinct symbols
+     * - Drop any leading DRAFT employees (batch might have them at the start)
+     * - Take only while below a salary threshold (budget limit)
+     * - Collect distinct departments
      */
-    public List<String> eligibleSymbols(List<Trade> sortedByNotional, double maxNotional) {
-        return sortedByNotional.stream()
-                .dropWhile(t -> "DRAFT".equals(t.status()))
-                .takeWhile(t -> t.notional() <= maxNotional)
-                .map(Trade::symbol)
+    public List<String> eligibleDepartments(List<Employee> sortedBySalary, double maxSalary) {
+        return sortedBySalary.stream()
+                .dropWhile(e -> "DRAFT".equals(e.status()))
+                .takeWhile(e -> e.salary() <= maxSalary)
+                .map(Employee::department)
                 .distinct()
                 .toList();
     }
@@ -191,20 +191,20 @@ public class StreamEnhancementsExamples {
     public static void main(String[] args) {
         StreamEnhancementsExamples ex = new StreamEnhancementsExamples();
 
-        System.out.println("Prices < 200 : " +
-                ex.pricesBelowCeiling(List.of(150.0, 170.0, 195.0, 210.0, 250.0), 200.0));
+        System.out.println("Salaries < 200 : " +
+                ex.salariesBelowThreshold(List.of(150.0, 170.0, 195.0, 210.0, 250.0), 200.0));
 
-        List<Trade> trades = List.of(
-                new Trade("T1", "AAPL", 100_000, "PENDING"),
-                new Trade("T2", "MSFT", 200_000, "PENDING"),
-                new Trade("T3", "GOOG", 300_000, "EXECUTED"),
-                new Trade("T4", "TSLA", 50_000,  "REJECTED")
+        List<Employee> employees = List.of(
+                new Employee("T1", "Alice",   "ENGINEERING", 100_000, "ONBOARDING"),
+                new Employee("T2", "Bob",     "MARKETING",   200_000, "ONBOARDING"),
+                new Employee("T3", "Charlie", "SALES",       300_000, "ACTIVE"),
+                new Employee("T4", "Diana",   "HR",           50_000, "RESIGNED")
         );
-        System.out.println("Skip pending : " + ex.skipLeadingPending(trades).size());
-        System.out.println("Offsets      : " + ex.pageOffsets(100, 350));
+        System.out.println("Skip onboarding : " + ex.skipLeadingOnboarding(employees).size());
+        System.out.println("Offsets         : " + ex.pageOffsets(100, 350));
 
-        NotionalStats stats = ex.computeStats(trades);
-        System.out.println("Stats sum    : " + stats.sum() + " count=" + stats.count());
-        System.out.println("Exec symbols : " + ex.executedSymbols(trades));
+        SalaryStats stats = ex.computeStats(employees);
+        System.out.println("Stats sum       : " + stats.sum() + " count=" + stats.count());
+        System.out.println("Active depts    : " + ex.activeDepartments(employees));
     }
 }

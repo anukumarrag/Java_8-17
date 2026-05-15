@@ -49,8 +49,8 @@ public class LambdaExamples {
     // =========================================================================
 
     /** Sort a list using an anonymous Comparator (Java 7 style). */
-    public List<String> sortTrades_Before(List<String> tradeIds) {
-        List<String> mutable = new java.util.ArrayList<>(tradeIds);
+    public List<String> sortEmployees_Before(List<String> employeeIds) {
+        List<String> mutable = new java.util.ArrayList<>(employeeIds);
         mutable.sort(new Comparator<String>() {
             @Override
             public int compare(String a, String b) {
@@ -61,7 +61,7 @@ public class LambdaExamples {
     }
 
     /** Filter a list using a hand-written loop + anonymous Predicate (Java 7 style). */
-    public List<String> filterActiveTrades_Before(List<String> statuses) {
+    public List<String> filterActiveEmployees_Before(List<String> statuses) {
         List<String> result = new java.util.ArrayList<>();
         for (String s : statuses) {
             if (s.startsWith("ACTIVE")) {
@@ -76,8 +76,8 @@ public class LambdaExamples {
     // =========================================================================
 
     /** Sort a list using a lambda Comparator. */
-    public List<String> sortTrades_After(List<String> tradeIds) {
-        List<String> mutable = new java.util.ArrayList<>(tradeIds);
+    public List<String> sortEmployees_After(List<String> employeeIds) {
+        List<String> mutable = new java.util.ArrayList<>(employeeIds);
         mutable.sort((a, b) -> a.compareTo(b));
         // Even cleaner with a method reference:
         // mutable.sort(String::compareTo);
@@ -85,7 +85,7 @@ public class LambdaExamples {
     }
 
     /** Filter using a Predicate lambda + Stream (shown fully in StreamExamples). */
-    public List<String> filterActiveTrades_After(List<String> statuses) {
+    public List<String> filterActiveEmployees_After(List<String> statuses) {
         return statuses.stream()
                 .filter(s -> s.startsWith("ACTIVE"))
                 .collect(java.util.stream.Collectors.toList());
@@ -96,39 +96,39 @@ public class LambdaExamples {
     // =========================================================================
 
     /** Predicate – tests a condition. */
-    public boolean isHighValue(double amount) {
-        Predicate<Double> highValue = value -> value > 1_000_000.0;
-        return highValue.test(amount);
+    public boolean isHighSalary(double amount) {
+        Predicate<Double> highSalary = value -> value > 100_000.0;
+        return highSalary.test(amount);
     }
 
     /** Function – transforms one type to another. */
-    public String formatTradeId(int rawId) {
-        Function<Integer, String> formatter = id -> "TRD-" + String.format("%06d", id);
+    public String formatEmployeeId(int rawId) {
+        Function<Integer, String> formatter = id -> "EMP-" + String.format("%06d", id);
         return formatter.apply(rawId);
     }
 
     /** Consumer – acts on a value, returns nothing. */
-    public void printTrade(String tradeId) {
-        Consumer<String> printer = id -> System.out.println("Processing trade: " + id);
-        printer.accept(tradeId);
+    public void printEmployee(String employeeId) {
+        Consumer<String> printer = id -> System.out.println("Processing employee: " + id);
+        printer.accept(employeeId);
     }
 
     /** Supplier – provides a value lazily. */
-    public String getDefaultCounterparty() {
-        Supplier<String> defaultCp = () -> "UNKNOWN_CP";
-        return defaultCp.get();
+    public String getDefaultDepartment() {
+        Supplier<String> defaultDept = () -> "UNKNOWN_DEPT";
+        return defaultDept.get();
     }
 
     /** BiFunction – takes two arguments. */
-    public String buildTradeKey(String symbol, int version) {
+    public String buildEmployeeKey(String name, int version) {
         BiFunction<String, Integer, String> keyBuilder =
-                (sym, ver) -> sym + "_v" + ver;
-        return keyBuilder.apply(symbol, version);
+                (n, ver) -> n + "_v" + ver;
+        return keyBuilder.apply(name, version);
     }
 
     /** Method reference – delegates directly to an existing method. */
-    public List<String> upperCaseSymbols(List<String> symbols) {
-        return symbols.stream()
+    public List<String> upperCaseNames(List<String> names) {
+        return names.stream()
                 .map(String::toUpperCase)   // equivalent to: s -> s.toUpperCase()
                 .collect(java.util.stream.Collectors.toList());
     }
@@ -139,7 +139,7 @@ public class LambdaExamples {
 
     /**
      * Function composition with andThen / compose.
-     * Problem context: sanitise then format a trade symbol.
+     * Problem context: sanitise then format an employee name.
      */
     public String sanitizeAndFormat(String raw) {
         Function<String, String> trim      = String::trim;
@@ -150,9 +150,9 @@ public class LambdaExamples {
 
     /**
      * Predicate composition with and / or / negate.
-     * Problem context: find trades that are active AND high-value.
+     * Problem context: find employees that are active AND have a long name.
      */
-    public Predicate<String> activeAndLongSymbol() {
+    public Predicate<String> activeAndLongName() {
         Predicate<String> isActive = s -> s.startsWith("ACTIVE");
         Predicate<String> isLong   = s -> s.length() > 10;
         return isActive.and(isLong);
@@ -177,12 +177,12 @@ public class LambdaExamples {
     public static void main(String[] args) {
         LambdaExamples ex = new LambdaExamples();
 
-        List<String> ids = Arrays.asList("TRD003", "TRD001", "TRD002");
+        List<String> ids = Arrays.asList("EMP-003", "EMP-001", "EMP-002");
         System.out.println("Before sort : " + ids);
-        System.out.println("After sort  : " + ex.sortTrades_After(ids));
+        System.out.println("After sort  : " + ex.sortEmployees_After(ids));
 
-        System.out.println("Format      : " + ex.formatTradeId(42));
-        System.out.println("Key         : " + ex.buildTradeKey("AAPL", 3));
-        System.out.println("Sanitize    : " + ex.sanitizeAndFormat("  aapl  "));
+        System.out.println("Format      : " + ex.formatEmployeeId(42));
+        System.out.println("Key         : " + ex.buildEmployeeKey("Alice", 3));
+        System.out.println("Sanitize    : " + ex.sanitizeAndFormat("  alice  "));
     }
 }

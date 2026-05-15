@@ -37,22 +37,22 @@ public class OptionalExamples {
     // =========================================================================
 
     public record Address(String street, String city) {}
-    public record Counterparty(String id, String name, Address address) {}
-    public record Trade(String id, Counterparty counterparty) {}
+    public record Department(String id, String name, Address address) {}
+    public record Employee(String id, Department department) {}
 
     // =========================================================================
     // BEFORE – Null-check hell
     // =========================================================================
 
     /**
-     * Get the city of the counterparty of a trade.
+     * Get the city of the department of an employee.
      * Fails with NPE if any link in the chain is null.
      */
-    public String getTradeCity_Before(Trade trade) {
-        if (trade != null) {
-            Counterparty cp = trade.counterparty();
-            if (cp != null) {
-                Address addr = cp.address();
+    public String getEmployeeCity_Before(Employee employee) {
+        if (employee != null) {
+            Department dept = employee.department();
+            if (dept != null) {
+                Address addr = dept.address();
                 if (addr != null) {
                     return addr.city();
                 }
@@ -62,12 +62,12 @@ public class OptionalExamples {
     }
 
     /**
-     * Find a counterparty by ID from an in-memory store – imperative null check.
+     * Find a department by ID from an in-memory store – imperative null check.
      */
-    public String findCounterpartyName_Before(String id) {
-        Counterparty cp = findById(id);   // could return null
-        if (cp != null) {
-            return cp.name();
+    public String findDepartmentName_Before(String id) {
+        Department dept = findById(id);   // could return null
+        if (dept != null) {
+            return dept.name();
         }
         return "NOT_FOUND";
     }
@@ -80,20 +80,20 @@ public class OptionalExamples {
      * Same city lookup using Optional chaining.
      * Each step is either mapped over or short-circuits to "UNKNOWN".
      */
-    public String getTradeCity_After(Trade trade) {
-        return Optional.ofNullable(trade)
-                .map(Trade::counterparty)
-                .map(Counterparty::address)
+    public String getEmployeeCity_After(Employee employee) {
+        return Optional.ofNullable(employee)
+                .map(Employee::department)
+                .map(Department::address)
                 .map(Address::city)
                 .orElse("UNKNOWN");
     }
 
     /**
-     * Find counterparty name – repository method now returns Optional<Counterparty>.
+     * Find department name – repository method now returns Optional<Department>.
      */
-    public String findCounterpartyName_After(String id) {
+    public String findDepartmentName_After(String id) {
         return findByIdOptional(id)
-                .map(Counterparty::name)
+                .map(Department::name)
                 .orElse("NOT_FOUND");
     }
 
@@ -102,48 +102,48 @@ public class OptionalExamples {
     // =========================================================================
 
     /** orElseGet – evaluate a Supplier only when absent (cheaper than orElse). */
-    public String resolveSymbol(String rawSymbol) {
-        return Optional.ofNullable(rawSymbol)
+    public String resolveName(String rawName) {
+        return Optional.ofNullable(rawName)
                 .filter(s -> !s.isBlank())
-                .orElseGet(() -> generateDefaultSymbol());
+                .orElseGet(() -> generateDefaultName());
     }
 
     /** orElseThrow – throw a domain exception when the value MUST be present. */
-    public Counterparty requireCounterparty(String id) {
+    public Department requireDepartment(String id) {
         return findByIdOptional(id)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("Counterparty not found: " + id));
+                        new IllegalArgumentException("Department not found: " + id));
     }
 
     /** ifPresent – execute a Consumer only when value is present (no if-check needed). */
-    public void logIfPresent(Optional<Trade> trade) {
-        trade.ifPresent(t -> System.out.println("Trade found: " + t.id()));
+    public void logIfPresent(Optional<Employee> employee) {
+        employee.ifPresent(e -> System.out.println("Employee found: " + e.id()));
     }
 
     /**
      * ifPresentOrElse (Java 9+) – cleaner than isPresent() + get() + else branch.
      */
-    public void processTradeOrWarn(Optional<Trade> trade) {
-        trade.ifPresentOrElse(
-                t  -> System.out.println("Processing: " + t.id()),
-                () -> System.out.println("No trade to process")
+    public void processEmployeeOrWarn(Optional<Employee> employee) {
+        employee.ifPresentOrElse(
+                e  -> System.out.println("Processing: " + e.id()),
+                () -> System.out.println("No employee to process")
         );
     }
 
     /**
      * flatMap – when the mapping itself returns an Optional, avoids Optional<Optional<T>>.
      */
-    public Optional<String> getCounterpartyCity(Optional<Trade> trade) {
-        return trade
-                .flatMap(t -> Optional.ofNullable(t.counterparty()))
-                .flatMap(cp -> Optional.ofNullable(cp.address()))
+    public Optional<String> getDepartmentCity(Optional<Employee> employee) {
+        return employee
+                .flatMap(e -> Optional.ofNullable(e.department()))
+                .flatMap(dept -> Optional.ofNullable(dept.address()))
                 .map(Address::city);
     }
 
     /**
      * or (Java 9+) – fallback to another Optional when empty.
      */
-    public Optional<Counterparty> resolveCounterparty(String primaryId, String fallbackId) {
+    public Optional<Department> resolveDepartment(String primaryId, String fallbackId) {
         return findByIdOptional(primaryId)
                 .or(() -> findByIdOptional(fallbackId));
     }
@@ -152,42 +152,42 @@ public class OptionalExamples {
     // Simulated repository methods
     // =========================================================================
 
-    private Counterparty findById(String id) {
-        if ("CP001".equals(id)) {
-            return new Counterparty("CP001", "Acme Corp",
-                    new Address("123 Wall St", "New York"));
+    private Department findById(String id) {
+        if ("D001".equals(id)) {
+            return new Department("D001", "Engineering",
+                    new Address("10 Tech Park", "Bangalore"));
         }
         return null;
     }
 
-    private Optional<Counterparty> findByIdOptional(String id) {
-        if ("CP001".equals(id)) {
-            return Optional.of(new Counterparty("CP001", "Acme Corp",
-                    new Address("123 Wall St", "New York")));
+    private Optional<Department> findByIdOptional(String id) {
+        if ("D001".equals(id)) {
+            return Optional.of(new Department("D001", "Engineering",
+                    new Address("10 Tech Park", "Bangalore")));
         }
         return Optional.empty();
     }
 
-    private String generateDefaultSymbol() {
-        return "DEFAULT_SYM";
+    private String generateDefaultName() {
+        return "DEFAULT_NAME";
     }
 
     // demo main
     public static void main(String[] args) {
         OptionalExamples ex = new OptionalExamples();
 
-        Trade tradeWithCity = new Trade("T001",
-                new Counterparty("CP001", "Acme", new Address("123 Wall St", "New York")));
-        Trade tradeNullCp = new Trade("T002", null);
+        Employee employeeWithCity = new Employee("E001",
+                new Department("D001", "Engineering", new Address("10 Tech Park", "Bangalore")));
+        Employee employeeNullDept = new Employee("E002", null);
 
-        System.out.println("City (full chain) : " + ex.getTradeCity_After(tradeWithCity));
-        System.out.println("City (null cp)    : " + ex.getTradeCity_After(tradeNullCp));
-        System.out.println("City (null trade) : " + ex.getTradeCity_After(null));
+        System.out.println("City (full chain) : " + ex.getEmployeeCity_After(employeeWithCity));
+        System.out.println("City (null dept)  : " + ex.getEmployeeCity_After(employeeNullDept));
+        System.out.println("City (null emp)   : " + ex.getEmployeeCity_After(null));
 
-        System.out.println("CP name found     : " + ex.findCounterpartyName_After("CP001"));
-        System.out.println("CP name missing   : " + ex.findCounterpartyName_After("UNKNOWN"));
+        System.out.println("Dept name found   : " + ex.findDepartmentName_After("D001"));
+        System.out.println("Dept name missing : " + ex.findDepartmentName_After("UNKNOWN"));
 
-        System.out.println("Symbol            : " + ex.resolveSymbol(null));
-        System.out.println("Symbol non-blank  : " + ex.resolveSymbol("AAPL"));
+        System.out.println("Name              : " + ex.resolveName(null));
+        System.out.println("Name non-blank    : " + ex.resolveName("Alice"));
     }
 }

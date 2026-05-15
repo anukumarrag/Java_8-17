@@ -52,16 +52,16 @@ public class CompletableFutureExamples {
     // BEFORE – Blocking Future<T> (Java 5–7 style)
     // =========================================================================
 
-    /** Fetch trade price from an exchange – blocks on get(). */
-    public double fetchPrice_Before(String symbol) throws Exception {
-        java.util.concurrent.Callable<Double> task = () -> simulatePriceFetch(symbol);
+    /** Fetch employee salary from HR system – blocks on get(). */
+    public double fetchSalary_Before(String department) throws Exception {
+        java.util.concurrent.Callable<Double> task = () -> simulateSalaryFetch(department);
         java.util.concurrent.ExecutorService exec =
                 java.util.concurrent.Executors.newSingleThreadExecutor();
         java.util.concurrent.Future<Double> future = exec.submit(task);
         // Blocks the calling thread until the result is ready
-        double price = future.get();
+        double salary = future.get();
         exec.shutdown();
-        return price;
+        return salary;
     }
 
     // =========================================================================
@@ -71,54 +71,54 @@ public class CompletableFutureExamples {
     // ---- supplyAsync + thenApply --------------------------------------------
 
     /**
-     * Fetch a price asynchronously, then format it – non-blocking pipeline.
+     * Fetch a salary asynchronously, then format it – non-blocking pipeline.
      * The thread that calls this method is NOT blocked.
      */
-    public CompletableFuture<String> fetchFormattedPrice(String symbol) {
+    public CompletableFuture<String> fetchFormattedSalary(String department) {
         return CompletableFuture
-                .supplyAsync(() -> simulatePriceFetch(symbol))    // runs on ForkJoinPool
-                .thenApply(price -> symbol + " @ " + String.format("%.4f", price));
+                .supplyAsync(() -> simulateSalaryFetch(department))    // runs on ForkJoinPool
+                .thenApply(salary -> department + " @ " + String.format("%.2f", salary));
     }
 
     // ---- thenCompose: flat-map two dependent async calls --------------------
 
     /**
-     * First fetch the trade, then asynchronously look up the counterparty.
+     * First fetch the employee, then asynchronously look up the department.
      * thenCompose avoids nesting: CompletableFuture<CompletableFuture<String>>.
      */
-    public CompletableFuture<String> fetchTradeWithCounterparty(String tradeId) {
+    public CompletableFuture<String> fetchEmployeeWithDepartment(String employeeId) {
         return CompletableFuture
-                .supplyAsync(() -> "TRADE:" + tradeId)
-                .thenCompose(trade ->
-                        CompletableFuture.supplyAsync(() -> trade + " CP:ACME"));
+                .supplyAsync(() -> "EMPLOYEE:" + employeeId)
+                .thenCompose(employee ->
+                        CompletableFuture.supplyAsync(() -> employee + " DEPT:ENGINEERING"));
     }
 
     // ---- thenCombine: merge two independent async results -------------------
 
     /**
-     * Fetch bid and ask prices from two independent sources simultaneously,
-     * then combine them into a spread.
+     * Fetch min and max salaries from two independent sources simultaneously,
+     * then combine them into a salary range.
      */
-    public CompletableFuture<String> fetchSpread(String symbol) {
-        CompletableFuture<Double> bidFuture =
-                CompletableFuture.supplyAsync(() -> simulatePriceFetch(symbol) - 0.01);
-        CompletableFuture<Double> askFuture =
-                CompletableFuture.supplyAsync(() -> simulatePriceFetch(symbol) + 0.01);
+    public CompletableFuture<String> fetchSalaryRange(String department) {
+        CompletableFuture<Double> minFuture =
+                CompletableFuture.supplyAsync(() -> simulateSalaryFetch(department) - 5_000);
+        CompletableFuture<Double> maxFuture =
+                CompletableFuture.supplyAsync(() -> simulateSalaryFetch(department) + 5_000);
 
-        return bidFuture.thenCombine(askFuture,
-                (bid, ask) -> String.format("BID=%.4f ASK=%.4f SPREAD=%.4f",
-                        bid, ask, ask - bid));
+        return minFuture.thenCombine(maxFuture,
+                (min, max) -> String.format("MIN=%.2f MAX=%.2f RANGE=%.2f",
+                        min, max, max - min));
     }
 
     // ---- allOf: wait for a batch of futures ---------------------------------
 
     /**
-     * Enrich all trades in parallel, then collect results.
+     * Enrich all employees in parallel, then collect results.
      * allOf() itself returns CompletableFuture<Void>; you need to join each
      * individual future to retrieve the result.
      */
-    public List<String> enrichTradesBatch(List<String> tradeIds) {
-        List<CompletableFuture<String>> futures = tradeIds.stream()
+    public List<String> enrichEmployeesBatch(List<String> employeeIds) {
+        List<CompletableFuture<String>> futures = employeeIds.stream()
                 .map(id -> CompletableFuture.supplyAsync(() -> id + ":ENRICHED"))
                 .collect(Collectors.toList());
 
@@ -134,15 +134,15 @@ public class CompletableFutureExamples {
     // ---- anyOf: first result wins -------------------------------------------
 
     /**
-     * Query multiple pricing sources; return whichever responds first.
+     * Query multiple data sources; return whichever responds first.
      */
-    public CompletableFuture<Object> fastestPriceSource(String symbol) {
+    public CompletableFuture<Object> fastestDataSource(String department) {
         CompletableFuture<String> source1 =
-                CompletableFuture.supplyAsync(() -> { sleep(50); return "SRC1:" + symbol; });
+                CompletableFuture.supplyAsync(() -> { sleep(50); return "SRC1:" + department; });
         CompletableFuture<String> source2 =
-                CompletableFuture.supplyAsync(() -> { sleep(30); return "SRC2:" + symbol; });
+                CompletableFuture.supplyAsync(() -> { sleep(30); return "SRC2:" + department; });
         CompletableFuture<String> source3 =
-                CompletableFuture.supplyAsync(() -> { sleep(80); return "SRC3:" + symbol; });
+                CompletableFuture.supplyAsync(() -> { sleep(80); return "SRC3:" + department; });
 
         return CompletableFuture.anyOf(source1, source2, source3);
     }
@@ -150,14 +150,14 @@ public class CompletableFutureExamples {
     // ---- exceptionally: recover from errors ---------------------------------
 
     /**
-     * Try to fetch an enriched trade; if anything fails, return a fallback value.
+     * Try to fetch an enriched employee; if anything fails, return a fallback value.
      */
-    public CompletableFuture<String> fetchWithFallback(String tradeId) {
+    public CompletableFuture<String> fetchWithFallback(String employeeId) {
         return CompletableFuture
                 .supplyAsync(() -> {
-                    if (tradeId == null || tradeId.isBlank())
-                        throw new IllegalArgumentException("tradeId is blank");
-                    return "ENRICHED:" + tradeId;
+                    if (employeeId == null || employeeId.isBlank())
+                        throw new IllegalArgumentException("employeeId is blank");
+                    return "ENRICHED:" + employeeId;
                 })
                 .exceptionally(ex -> "FALLBACK:" + ex.getMessage());
     }
@@ -168,12 +168,12 @@ public class CompletableFutureExamples {
      * handle() runs regardless of success or failure.
      * The result parameter is null on failure; the exception is null on success.
      */
-    public CompletableFuture<String> fetchWithHandle(String tradeId) {
+    public CompletableFuture<String> fetchWithHandle(String employeeId) {
         return CompletableFuture
                 .supplyAsync(() -> {
-                    if ("INVALID".equals(tradeId))
-                        throw new RuntimeException("Trade not found: " + tradeId);
-                    return "DATA:" + tradeId;
+                    if ("INVALID".equals(employeeId))
+                        throw new RuntimeException("Employee not found: " + employeeId);
+                    return "DATA:" + employeeId;
                 })
                 .handle((result, ex) ->
                         ex != null ? "ERROR[" + ex.getMessage() + "]" : "OK[" + result + "]");
@@ -181,9 +181,9 @@ public class CompletableFutureExamples {
 
     // ---- whenComplete: observe without transforming -------------------------
 
-    public CompletableFuture<String> fetchWithLogging(String tradeId) {
+    public CompletableFuture<String> fetchWithLogging(String employeeId) {
         return CompletableFuture
-                .supplyAsync(() -> "TRADE:" + tradeId)
+                .supplyAsync(() -> "EMPLOYEE:" + employeeId)
                 .whenComplete((result, ex) -> {
                     if (ex != null) System.err.println("ERROR: " + ex.getMessage());
                     else System.out.println("Completed: " + result);
@@ -200,13 +200,13 @@ public class CompletableFutureExamples {
     // Helpers
     // =========================================================================
 
-    /** Simulate a remote price fetch (returns a deterministic value for testing). */
-    double simulatePriceFetch(String symbol) {
-        return switch (symbol) {
-            case "AAPL" -> 182.50;
-            case "MSFT" -> 415.00;
-            case "GOOG" -> 172.30;
-            default     -> 100.00;
+    /** Simulate a remote salary fetch (returns a deterministic value for testing). */
+    double simulateSalaryFetch(String department) {
+        return switch (department) {
+            case "ENGINEERING" -> 85_000;
+            case "MARKETING"   -> 75_000;
+            case "SALES"       -> 80_000;
+            default            -> 70_000;
         };
     }
 
@@ -218,12 +218,12 @@ public class CompletableFutureExamples {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         CompletableFutureExamples ex = new CompletableFutureExamples();
 
-        System.out.println("Formatted     : " + ex.fetchFormattedPrice("AAPL").join());
-        System.out.println("With CP       : " + ex.fetchTradeWithCounterparty("T001").join());
-        System.out.println("Spread        : " + ex.fetchSpread("MSFT").join());
-        System.out.println("Batch         : " + ex.enrichTradesBatch(List.of("T1","T2","T3")));
+        System.out.println("Formatted     : " + ex.fetchFormattedSalary("ENGINEERING").join());
+        System.out.println("With Dept     : " + ex.fetchEmployeeWithDepartment("E001").join());
+        System.out.println("Range         : " + ex.fetchSalaryRange("MARKETING").join());
+        System.out.println("Batch         : " + ex.enrichEmployeesBatch(List.of("E1","E2","E3")));
         System.out.println("Fallback      : " + ex.fetchWithFallback("").join());
-        System.out.println("Handle ok     : " + ex.fetchWithHandle("T001").join());
+        System.out.println("Handle ok     : " + ex.fetchWithHandle("E001").join());
         System.out.println("Handle err    : " + ex.fetchWithHandle("INVALID").join());
     }
 }

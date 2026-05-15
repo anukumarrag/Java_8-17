@@ -1,8 +1,8 @@
 package com.training.java817.module3;
 
 import com.training.java817.module3.after.*;
-import com.training.java817.module3.before.TradeTransaction;
-import com.training.java817.module3.before.TransactionService;
+import com.training.java817.module3.before.Employee;
+import com.training.java817.module3.before.EmployeeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,16 +17,16 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Module 3 – Workshop: Before vs After")
 class WorkshopTest {
 
-    private TransactionService     legacySvc;
-    private ModernTransactionService modernSvc;
+    private EmployeeService       legacySvc;
+    private ModernEmployeeService modernSvc;
 
     private static final LocalDate TODAY       = LocalDate.of(2024, 6, 1);
-    private static final LocalDate SETTLEMENT  = TODAY.plusDays(2);
+    private static final LocalDate REVIEW_DATE = TODAY.plusDays(90);
 
     @BeforeEach
     void setUp() {
-        legacySvc  = new TransactionService();
-        modernSvc  = new ModernTransactionService();
+        legacySvc  = new EmployeeService();
+        modernSvc  = new ModernEmployeeService();
     }
 
     // =========================================================================
@@ -34,56 +34,65 @@ class WorkshopTest {
     // =========================================================================
 
     @Test
-    @DisplayName("Task 1: TradeTransaction POJO has same data as Record")
+    @DisplayName("Task 1: Employee POJO has same data as Record")
     void task1_pojoAndRecord_containSameData() {
-        TradeTransaction pojo = new TradeTransaction(
-                "T001", "AAPL", 1_500_000.0, "CP01", "TR01",
-                "USD", "EQUITY", TODAY, SETTLEMENT, "EXECUTED");
+        Employee pojo = new Employee(
+                "E001", "Alice Smith", 95_000.0, "D01", "M01",
+                "LONDON", "ENGINEER", TODAY, REVIEW_DATE, "ACTIVE");
 
-        TradeTransactionRecord record = new TradeTransactionRecord(
-                "T001", "AAPL", 1_500_000.0, "CP01", "TR01",
-                "USD", "EQUITY", TODAY, SETTLEMENT, "EXECUTED");
+        EmployeeRecord record = new EmployeeRecord(
+                "E001", "Alice Smith", 95_000.0, "D01", "M01",
+                "LONDON", "ENGINEER", TODAY, REVIEW_DATE, "ACTIVE");
 
-        assertEquals(pojo.getTradeId(),        record.tradeId());
-        assertEquals(pojo.getSymbol(),         record.symbol());
-        assertEquals(pojo.getNotional(),       record.notional());
-        assertEquals(pojo.getCounterpartyId(), record.counterpartyId());
-        assertEquals(pojo.getStatus(),         record.status());
+        assertEquals(pojo.getEmployeeId(),   record.employeeId());
+        assertEquals(pojo.getName(),         record.name());
+        assertEquals(pojo.getSalary(),       record.salary());
+        assertEquals(pojo.getDepartmentId(), record.departmentId());
+        assertEquals(pojo.getStatus(),       record.status());
     }
 
     @Test
-    @DisplayName("Task 1: Record isHighValue() returns true for 1.5M notional")
-    void task1_record_isHighValue() {
-        TradeTransactionRecord record = new TradeTransactionRecord(
-                "T001", "AAPL", 1_500_000.0, "CP01", "TR01",
-                "USD", "EQUITY", TODAY, SETTLEMENT, "EXECUTED");
-        assertTrue(record.isHighValue());
+    @DisplayName("Task 1: Record isHighSalary() returns false for 95K salary")
+    void task1_record_isHighSalary_95K_false() {
+        EmployeeRecord record = new EmployeeRecord(
+                "E001", "Alice Smith", 95_000.0, "D01", "M01",
+                "LONDON", "ENGINEER", TODAY, REVIEW_DATE, "ACTIVE");
+        assertFalse(record.isHighSalary());
     }
 
     @Test
-    @DisplayName("Task 1: Record draft() factory sets DRAFT status")
-    void task1_record_draftFactory() {
-        TradeTransactionRecord draft = TradeTransactionRecord.draft(
-                "T002", "MSFT", 500_000.0, "CP02", "TR02", "USD", "EQUITY");
-        assertEquals("DRAFT", draft.status());
+    @DisplayName("Task 1: Record isHighSalary() returns true for 150K salary")
+    void task1_record_isHighSalary_150K_true() {
+        EmployeeRecord record = new EmployeeRecord(
+                "E001", "Alice Smith", 150_000.0, "D01", "M01",
+                "LONDON", "ENGINEER", TODAY, REVIEW_DATE, "ACTIVE");
+        assertTrue(record.isHighSalary());
+    }
+
+    @Test
+    @DisplayName("Task 1: Record pending() factory sets ONBOARDING status")
+    void task1_record_pendingFactory() {
+        EmployeeRecord pending = EmployeeRecord.pending(
+                "E002", "Bob", 80_000.0, "D02", "M02", "NEW_YORK", "ANALYST");
+        assertEquals("ONBOARDING", pending.status());
     }
 
     @Test
     @DisplayName("Task 1: Record withStatus() returns new record with updated status")
     void task1_record_withStatus() {
-        TradeTransactionRecord draft = TradeTransactionRecord.draft(
-                "T003", "GOOG", 250_000.0, "CP03", "TR03", "USD", "EQUITY");
-        TradeTransactionRecord executed = draft.withStatus("EXECUTED");
-        assertEquals("EXECUTED", executed.status());
-        assertEquals(draft.tradeId(), executed.tradeId());  // immutable copy
+        EmployeeRecord onboarding = EmployeeRecord.pending(
+                "E003", "Charlie", 75_000.0, "D03", "M03", "BANGALORE", "ENGINEER");
+        EmployeeRecord active = onboarding.withStatus("ACTIVE");
+        assertEquals("ACTIVE", active.status());
+        assertEquals(onboarding.employeeId(), active.employeeId());  // immutable copy
     }
 
     @Test
-    @DisplayName("Task 1: Record negative notional throws IllegalArgumentException")
-    void task1_record_negativeNotional_throws() {
+    @DisplayName("Task 1: Record negative salary throws IllegalArgumentException")
+    void task1_record_negativeSalary_throws() {
         assertThrows(IllegalArgumentException.class, () ->
-                new TradeTransactionRecord("T1", "AAPL", -1.0, "CP1", "TR1",
-                        "USD", "EQUITY", TODAY, SETTLEMENT, "DRAFT"));
+                new EmployeeRecord("E1", "Alice", -1.0, "D1", "M1",
+                        "LONDON", "ENGINEER", TODAY, REVIEW_DATE, "ACTIVE"));
     }
 
     // =========================================================================
@@ -93,22 +102,22 @@ class WorkshopTest {
     @Test
     @DisplayName("Task 2: Before/After SQL contain same core clauses")
     void task2_sqlBeforeAfter_sameCoreClauses() {
-        String before = legacySvc.buildSearchQuery("AAPL", "EXECUTED", TODAY);
-        String after  = modernSvc.buildSearchQuery("AAPL", "EXECUTED", TODAY);
+        String before = legacySvc.buildSearchQuery("Alice", "ACTIVE", TODAY);
+        String after  = modernSvc.buildSearchQuery("Alice", "ACTIVE", TODAY);
 
         for (String clause : new String[]{"SELECT", "FROM", "WHERE", "ORDER"}) {
             assertTrue(before.contains(clause), "before missing: " + clause);
             assertTrue(after.contains(clause),  "after missing: "  + clause);
         }
-        assertTrue(before.contains("AAPL"));
-        assertTrue(after.contains("AAPL"));
+        assertTrue(before.contains("Alice"));
+        assertTrue(after.contains("Alice"));
     }
 
     @Test
     @DisplayName("Task 2: Aggregation query Before/After both contain GROUP BY")
     void task2_aggregationQuery_containsGroupBy() {
-        String before = legacySvc.buildAggregationQuery("EQUITY");
-        String after  = modernSvc.buildAggregationQuery("EQUITY");
+        String before = legacySvc.buildAggregationQuery("ENGINEERING");
+        String after  = modernSvc.buildAggregationQuery("ENGINEERING");
         assertTrue(before.contains("GROUP"));
         assertTrue(after.contains("GROUP"));
     }
@@ -118,46 +127,46 @@ class WorkshopTest {
     // =========================================================================
 
     @Test
-    @DisplayName("Task 3: TradeCreatedEvent is-a TradeEvent")
-    void task3_tradeCreatedEvent_isTradeEvent() {
-        TradeEvent event = new TradeCreatedEvent("T001", "AAPL", 1_000_000, "CP01");
-        assertInstanceOf(TradeEvent.class, event);
+    @DisplayName("Task 3: EmployeeHiredEvent is-a EmployeeEvent")
+    void task3_employeeHiredEvent_isEmployeeEvent() {
+        EmployeeEvent event = new EmployeeHiredEvent("E001", "Alice", 85_000, "D01");
+        assertInstanceOf(EmployeeEvent.class, event);
     }
 
     @Test
-    @DisplayName("Task 3: processEvent describes creation correctly")
-    void task3_processEvent_creation() {
-        TradeEvent event = new TradeCreatedEvent("T001", "AAPL", 500_000, "CP01");
+    @DisplayName("Task 3: processEvent describes hire correctly")
+    void task3_processEvent_hire() {
+        EmployeeEvent event = new EmployeeHiredEvent("E001", "Alice", 85_000, "D01");
         String desc = modernSvc.processEvent(event);
-        assertTrue(desc.contains("T001"));
-        assertTrue(desc.contains("AAPL"));
+        assertTrue(desc.contains("E001"));
+        assertTrue(desc.contains("Alice"));
     }
 
     @Test
-    @DisplayName("Task 3: processEvent describes rejection correctly")
-    void task3_processEvent_rejection() {
-        TradeEvent event = new TradeRejectedEvent("T002", "RISK_LIMIT", "Over daily limit");
+    @DisplayName("Task 3: processEvent describes termination correctly")
+    void task3_processEvent_termination() {
+        EmployeeEvent event = new EmployeeTerminatedEvent("E002", "RISK_LIMIT", "Over daily limit");
         String desc = modernSvc.processEvent(event);
-        assertTrue(desc.contains("T002"));
+        assertTrue(desc.contains("E002"));
         assertTrue(desc.contains("Over daily limit"));
     }
 
     @Test
-    @DisplayName("Task 3: processEvent describes execution correctly")
-    void task3_processEvent_execution() {
-        TradeEvent event = new TradeExecutedEvent("T003", "LSE", 182.50, 10_000);
+    @DisplayName("Task 3: processEvent describes promotion correctly")
+    void task3_processEvent_promotion() {
+        EmployeeEvent event = new EmployeePromotedEvent("E003", "SENIOR_ENGINEER", 120_000.0, "2024-06-01");
         String desc = modernSvc.processEvent(event);
-        assertTrue(desc.contains("T003"));
-        assertTrue(desc.contains("LSE"));
+        assertTrue(desc.contains("E003"));
+        assertTrue(desc.contains("SENIOR_ENGINEER"));
     }
 
     @Test
     @DisplayName("Task 3: processEvent describes update correctly")
     void task3_processEvent_update() {
-        TradeEvent event = new TradeUpdatedEvent("T004", 2_000_000, "Client request");
+        EmployeeEvent event = new EmployeeUpdatedEvent("E004", 90_000, "Performance review");
         String desc = modernSvc.processEvent(event);
-        assertTrue(desc.contains("T004"));
-        assertTrue(desc.contains("Client request"));
+        assertTrue(desc.contains("E004"));
+        assertTrue(desc.contains("Performance review"));
     }
 
     // =========================================================================
@@ -167,24 +176,24 @@ class WorkshopTest {
     @Test
     @DisplayName("Task 4: routeEvent correctly routes each sealed event type")
     void task4_routeEvent_allTypes() {
-        assertEquals("trade-creation-topic",
-                modernSvc.routeEvent(new TradeCreatedEvent("T1", "A", 1, "CP1")));
-        assertEquals("trade-amendment-topic",
-                modernSvc.routeEvent(new TradeUpdatedEvent("T2", 2, "reason")));
-        assertEquals("execution-report-topic",
-                modernSvc.routeEvent(new TradeExecutedEvent("T3", "NYSE", 10.0, 100)));
-        assertEquals("rejection-alert-topic",
-                modernSvc.routeEvent(new TradeRejectedEvent("T4", "CODE", "reason")));
+        assertEquals("employee-hired-topic",
+                modernSvc.routeEvent(new EmployeeHiredEvent("E1", "Alice", 85_000, "D1")));
+        assertEquals("employee-update-topic",
+                modernSvc.routeEvent(new EmployeeUpdatedEvent("E2", 90_000, "reason")));
+        assertEquals("employee-promotion-topic",
+                modernSvc.routeEvent(new EmployeePromotedEvent("E3", "LEAD", 100_000, "2024-01-01")));
+        assertEquals("employee-termination-topic",
+                modernSvc.routeEvent(new EmployeeTerminatedEvent("E4", "CODE", "reason")));
     }
 
     @Test
-    @DisplayName("Task 4: getSettlementDays Before/After match for all asset classes")
-    void task4_settlementDays_beforeAndAfterMatch() {
-        for (String ac : new String[]{"EQUITY", "FIXED_INCOME", "FOREX", "COMMODITY", "UNKNOWN"}) {
+    @DisplayName("Task 4: getNoticePeriodDays Before/After match for all job titles")
+    void task4_noticePeriodDays_beforeAndAfterMatch() {
+        for (String jt : new String[]{"ENGINEER", "MANAGER", "DIRECTOR", "ANALYST", "UNKNOWN"}) {
             assertEquals(
-                    legacySvc.getSettlementDays_Before(ac),
-                    modernSvc.getSettlementDays(ac),
-                    "Mismatch for asset class: " + ac);
+                    legacySvc.getNoticePeriodDays_Before(jt),
+                    modernSvc.getNoticePeriodDays(jt),
+                    "Mismatch for job title: " + jt);
         }
     }
 
@@ -192,36 +201,36 @@ class WorkshopTest {
     // Stream-based data processing
     // =========================================================================
 
-    private List<TradeTransactionRecord> sampleRecords() {
+    private List<EmployeeRecord> sampleRecords() {
         return Arrays.asList(
-                new TradeTransactionRecord("T1", "AAPL", 500_000,   "CP1", "TR1", "USD", "EQUITY",      TODAY, SETTLEMENT, "EXECUTED"),
-                new TradeTransactionRecord("T2", "MSFT", 1_200_000, "CP2", "TR2", "USD", "EQUITY",      TODAY, SETTLEMENT, "PENDING"),
-                new TradeTransactionRecord("T3", "AAPL", 800_000,   "CP1", "TR1", "USD", "EQUITY",      TODAY, SETTLEMENT, "EXECUTED"),
-                new TradeTransactionRecord("T4", "GOOG", 3_000_000, "CP3", "TR3", "USD", "FIXED_INCOME",TODAY, SETTLEMENT, "EXECUTED")
+                new EmployeeRecord("E1", "Alice",   500_000,   "D01", "M01", "LONDON",    "ENGINEER", TODAY, REVIEW_DATE, "ACTIVE"),
+                new EmployeeRecord("E2", "Bob",     1_200_000, "D02", "M02", "NEW_YORK",  "MANAGER",  TODAY, REVIEW_DATE, "ONBOARDING"),
+                new EmployeeRecord("E3", "Charlie", 800_000,   "D01", "M01", "LONDON",    "ENGINEER", TODAY, REVIEW_DATE, "ACTIVE"),
+                new EmployeeRecord("E4", "Diana",   3_000_000, "D03", "M03", "BANGALORE", "DIRECTOR", TODAY, REVIEW_DATE, "ACTIVE")
         );
     }
 
     @Test
-    @DisplayName("filterByStatus: returns only EXECUTED trades")
-    void filterByStatus_executedOnly() {
-        List<TradeTransactionRecord> executed = modernSvc.filterByStatus(sampleRecords(), "EXECUTED");
-        assertEquals(3, executed.size());
-        assertTrue(executed.stream().allMatch(t -> "EXECUTED".equals(t.status())));
+    @DisplayName("filterByStatus: returns only ACTIVE employees")
+    void filterByStatus_activeOnly() {
+        List<EmployeeRecord> active = modernSvc.filterByStatus(sampleRecords(), "ACTIVE");
+        assertEquals(3, active.size());
+        assertTrue(active.stream().allMatch(e -> "ACTIVE".equals(e.status())));
     }
 
     @Test
-    @DisplayName("sumNotionalBySymbol: AAPL totals 1.3M")
-    void sumNotionalBySymbol_aaplTotal() {
-        Map<String, Double> sums = modernSvc.sumNotionalBySymbol(sampleRecords());
-        assertEquals(1_300_000.0, sums.get("AAPL"), 1e-9);
+    @DisplayName("sumSalaryByDepartment: D01 totals 1.3M")
+    void sumSalaryByDepartment_d01Total() {
+        Map<String, Double> sums = modernSvc.sumSalaryByDepartment(sampleRecords());
+        assertEquals(1_300_000.0, sums.get("D01"), 1e-9);
     }
 
     @Test
-    @DisplayName("topNByNotional: top 2 trades are GOOG and MSFT")
-    void topNByNotional_top2() {
-        List<TradeTransactionRecord> top2 = modernSvc.topNByNotional(sampleRecords(), 2);
+    @DisplayName("topNBySalary: top 2 employees are Diana and Bob")
+    void topNBySalary_top2() {
+        List<EmployeeRecord> top2 = modernSvc.topNBySalary(sampleRecords(), 2);
         assertEquals(2, top2.size());
-        assertEquals("GOOG", top2.get(0).symbol());
-        assertEquals("MSFT", top2.get(1).symbol());
+        assertEquals("Diana", top2.get(0).name());
+        assertEquals("Bob",   top2.get(1).name());
     }
 }

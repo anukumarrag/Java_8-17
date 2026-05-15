@@ -18,9 +18,9 @@ class TextBlockExamplesTest {
 
     @Test
     @DisplayName("SQL Before/After: both contain the same core keywords")
-    void buildTradeQuery_beforeAndAfter_containSameKeywords() {
-        String before = ex.buildTradeQuery_Before("EXECUTED");
-        String after  = ex.buildTradeQuery_After("EXECUTED");
+    void buildEmployeeQuery_beforeAndAfter_containSameKeywords() {
+        String before = ex.buildEmployeeQuery_Before("ACTIVE");
+        String after  = ex.buildEmployeeQuery_After("ACTIVE");
 
         // Both must contain the same key clauses
         for (String keyword : new String[]{"SELECT", "FROM", "JOIN", "WHERE", "ORDER"}) {
@@ -31,15 +31,15 @@ class TextBlockExamplesTest {
 
     @Test
     @DisplayName("SQL After: contains the interpolated status value")
-    void buildTradeQuery_after_containsInterpolatedStatus() {
-        String sql = ex.buildTradeQuery_After("PENDING");
-        assertTrue(sql.contains("'PENDING'"));
+    void buildEmployeeQuery_after_containsInterpolatedStatus() {
+        String sql = ex.buildEmployeeQuery_After("ONBOARDING");
+        assertTrue(sql.contains("'ONBOARDING'"));
     }
 
     @Test
     @DisplayName("SQL After: text block ends with a newline (trailing delimiter)")
-    void buildTradeQuery_after_endsWithNewline() {
-        String sql = ex.buildTradeQuery_After("EXECUTED");
+    void buildEmployeeQuery_after_endsWithNewline() {
+        String sql = ex.buildEmployeeQuery_After("ACTIVE");
         assertTrue(sql.endsWith("\n"));
     }
 
@@ -47,24 +47,24 @@ class TextBlockExamplesTest {
 
     @Test
     @DisplayName("JSON Before/After: both contain same fields")
-    void buildTradeJson_beforeAndAfter_sameStructure() {
-        String before = ex.buildTradeJson_Before("T001", "AAPL", 1_500_000.0);
-        String after  = ex.buildTradeJson_After("T001", "AAPL", 1_500_000.0);
+    void buildEmployeeJson_beforeAndAfter_sameStructure() {
+        String before = ex.buildEmployeeJson_Before("E001", "Alice", 95_000.0);
+        String after  = ex.buildEmployeeJson_After("E001", "Alice", 95_000.0);
 
-        for (String key : new String[]{"tradeId", "symbol", "notional", "status"}) {
+        for (String key : new String[]{"employeeId", "name", "salary", "status"}) {
             assertTrue(before.contains(key), "before missing key: " + key);
             assertTrue(after.contains(key),  "after missing key: "  + key);
         }
-        assertTrue(before.contains("T001"));
-        assertTrue(after.contains("T001"));
+        assertTrue(before.contains("E001"));
+        assertTrue(after.contains("E001"));
     }
 
     @Test
     @DisplayName("JSON After: uses double quotes for keys (valid JSON)")
-    void buildTradeJson_after_usesDoubleQuotedKeys() {
-        String json = ex.buildTradeJson_After("T002", "MSFT", 500_000.0);
-        assertTrue(json.contains("\"tradeId\""));
-        assertTrue(json.contains("\"symbol\""));
+    void buildEmployeeJson_after_usesDoubleQuotedKeys() {
+        String json = ex.buildEmployeeJson_After("E002", "Bob", 80_000.0);
+        assertTrue(json.contains("\"employeeId\""));
+        assertTrue(json.contains("\"name\""));
     }
 
     // --- HTML ---
@@ -72,26 +72,26 @@ class TextBlockExamplesTest {
     @Test
     @DisplayName("HTML Before/After: both contain same structural elements")
     void buildHtml_beforeAndAfter_sameStructure() {
-        String before = ex.buildTradeConfirmationHtml_Before("T001", "EXECUTED");
-        String after  = ex.buildTradeConfirmationHtml_After("T001", "EXECUTED");
+        String before = ex.buildEmployeeReportHtml_Before("E001", "ACTIVE");
+        String after  = ex.buildEmployeeReportHtml_After("E001", "ACTIVE");
 
         for (String tag : new String[]{"<html>", "<body>", "<h1>", "</html>"}) {
             assertTrue(before.contains(tag), "before missing: " + tag);
             assertTrue(after.contains(tag),  "after missing: "  + tag);
         }
-        assertTrue(before.contains("T001"));
-        assertTrue(after.contains("T001"));
+        assertTrue(before.contains("E001"));
+        assertTrue(after.contains("E001"));
     }
 
     // --- XML ---
 
     @Test
-    @DisplayName("XML FpML message contains trade ID and symbol")
-    void buildFpmlMessage_containsTradeIdAndSymbol() {
-        String xml = ex.buildFpmlMessage_After("T001", "AAPL", 1_500_000.0);
-        assertTrue(xml.contains("<tradeId>T001</tradeId>"));
-        assertTrue(xml.contains("<instrument>AAPL</instrument>"));
-        assertTrue(xml.contains("1500000.0"));
+    @DisplayName("XML employee message contains employee ID and name")
+    void buildEmployeeXml_containsIdAndName() {
+        String xml = ex.buildEmployeeXml_After("E001", "Alice", 95_000.0);
+        assertTrue(xml.contains("<id>E001</id>"));
+        assertTrue(xml.contains("<name>Alice</name>"));
+        assertTrue(xml.contains("95000.0"));
     }
 
     // --- Line continuation ---
@@ -102,7 +102,7 @@ class TextBlockExamplesTest {
         String sql = ex.singleLineFromBlock();
         // The line continuation escape joins the first two lines; result should be one SQL line
         // plus a final newline
-        assertTrue(sql.contains("SELECT trade_id, symbol, notional"));
-        assertTrue(sql.contains("FROM trades"));
+        assertTrue(sql.contains("SELECT employee_id, name, salary"));
+        assertTrue(sql.contains("FROM employees"));
     }
 }

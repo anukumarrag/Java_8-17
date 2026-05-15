@@ -43,62 +43,61 @@ public class RecordsExample {
     // =========================================================================
 
     /**
-     * Before Java 16: a typical TradeDetails DTO required ~80 lines of code.
+     * Before Java 16: a typical EmployeeDetails DTO required ~80 lines of code.
      * This class shows the full boilerplate.
      */
-    public static class TradeDetailsPojo {
-        private final String tradeId;
-        private final String symbol;
-        private final double notional;
-        private final String counterpartyId;
-        private final LocalDate settlementDate;
+    public static class EmployeePojo {
+        private final String id;
+        private final String name;
+        private final double salary;
+        private final String departmentId;
+        private final LocalDate hireDate;
         private final String status;
 
-        public TradeDetailsPojo(String tradeId, String symbol, double notional,
-                                String counterpartyId, LocalDate settlementDate,
-                                String status) {
-            this.tradeId         = Objects.requireNonNull(tradeId, "tradeId required");
-            this.symbol          = Objects.requireNonNull(symbol, "symbol required");
-            this.notional        = notional;
-            this.counterpartyId  = Objects.requireNonNull(counterpartyId, "counterpartyId required");
-            this.settlementDate  = Objects.requireNonNull(settlementDate, "settlementDate required");
-            this.status          = Objects.requireNonNull(status, "status required");
+        public EmployeePojo(String id, String name, double salary,
+                            String departmentId, LocalDate hireDate,
+                            String status) {
+            this.id           = Objects.requireNonNull(id,           "id required");
+            this.name         = Objects.requireNonNull(name,         "name required");
+            this.salary       = salary;
+            this.departmentId = Objects.requireNonNull(departmentId, "departmentId required");
+            this.hireDate     = Objects.requireNonNull(hireDate,     "hireDate required");
+            this.status       = Objects.requireNonNull(status,       "status required");
         }
 
-        public String getTradeId()         { return tradeId; }
-        public String getSymbol()          { return symbol; }
-        public double getNotional()        { return notional; }
-        public String getCounterpartyId()  { return counterpartyId; }
-        public LocalDate getSettlementDate() { return settlementDate; }
-        public String getStatus()          { return status; }
+        public String getId()           { return id; }
+        public String getName()         { return name; }
+        public double getSalary()       { return salary; }
+        public String getDepartmentId() { return departmentId; }
+        public LocalDate getHireDate()  { return hireDate; }
+        public String getStatus()       { return status; }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof TradeDetailsPojo)) return false;
-            TradeDetailsPojo that = (TradeDetailsPojo) o;
-            return Double.compare(that.notional, notional) == 0
-                    && Objects.equals(tradeId, that.tradeId)
-                    && Objects.equals(symbol, that.symbol)
-                    && Objects.equals(counterpartyId, that.counterpartyId)
-                    && Objects.equals(settlementDate, that.settlementDate)
+            if (!(o instanceof EmployeePojo)) return false;
+            EmployeePojo that = (EmployeePojo) o;
+            return Double.compare(that.salary, salary) == 0
+                    && Objects.equals(id, that.id)
+                    && Objects.equals(name, that.name)
+                    && Objects.equals(departmentId, that.departmentId)
+                    && Objects.equals(hireDate, that.hireDate)
                     && Objects.equals(status, that.status);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(tradeId, symbol, notional,
-                                counterpartyId, settlementDate, status);
+            return Objects.hash(id, name, salary, departmentId, hireDate, status);
         }
 
         @Override
         public String toString() {
-            return "TradeDetailsPojo{" +
-                    "tradeId='" + tradeId + '\'' +
-                    ", symbol='" + symbol + '\'' +
-                    ", notional=" + notional +
-                    ", counterpartyId='" + counterpartyId + '\'' +
-                    ", settlementDate=" + settlementDate +
+            return "EmployeePojo{" +
+                    "id='" + id + '\'' +
+                    ", name='" + name + '\'' +
+                    ", salary=" + salary +
+                    ", departmentId='" + departmentId + '\'' +
+                    ", hireDate=" + hireDate +
                     ", status='" + status + '\'' +
                     '}';
         }
@@ -113,34 +112,34 @@ public class RecordsExample {
      * equals, hashCode, toString, accessors, and the canonical constructor
      * are all auto-generated by the compiler.
      */
-    public record TradeDetailsRecord(
-            String tradeId,
-            String symbol,
-            double notional,
-            String counterpartyId,
-            LocalDate settlementDate,
+    public record EmployeeRecord(
+            String id,
+            String name,
+            double salary,
+            String departmentId,
+            LocalDate hireDate,
             String status
     ) {
         // --- Compact constructor: validation without repeating field assignments ---
-        public TradeDetailsRecord {
-            Objects.requireNonNull(tradeId,        "tradeId required");
-            Objects.requireNonNull(symbol,         "symbol required");
-            Objects.requireNonNull(counterpartyId, "counterpartyId required");
-            Objects.requireNonNull(settlementDate, "settlementDate required");
-            Objects.requireNonNull(status,         "status required");
-            if (notional < 0) throw new IllegalArgumentException("notional must be >= 0");
+        public EmployeeRecord {
+            Objects.requireNonNull(id,           "id required");
+            Objects.requireNonNull(name,         "name required");
+            Objects.requireNonNull(departmentId, "departmentId required");
+            Objects.requireNonNull(hireDate,     "hireDate required");
+            Objects.requireNonNull(status,       "status required");
+            if (salary < 0) throw new IllegalArgumentException("salary must be >= 0");
         }
 
         // --- Custom method: derived value (records CAN have instance methods) ---
-        public boolean isHighValue() {
-            return notional > 1_000_000.0;
+        public boolean isHighSalary() {
+            return salary > 100_000.0;
         }
 
         // --- Static factory method ---
-        public static TradeDetailsRecord draft(String tradeId, String symbol, double notional,
-                                               String counterpartyId) {
-            return new TradeDetailsRecord(tradeId, symbol, notional,
-                    counterpartyId, LocalDate.now(), "DRAFT");
+        public static EmployeeRecord pending(String id, String name, double salary,
+                                             String departmentId) {
+            return new EmployeeRecord(id, name, salary,
+                    departmentId, LocalDate.now(), "ONBOARDING");
         }
     }
 
@@ -152,8 +151,8 @@ public class RecordsExample {
     public record Pair<A, B>(A first, B second) {}
 
     /** Nested records compose naturally. */
-    public record TradeConfirmation(
-            TradeDetailsRecord trade,
+    public record EmployeeConfirmation(
+            EmployeeRecord employee,
             String confirmationRef,
             LocalDate confirmedAt
     ) {}
@@ -166,26 +165,26 @@ public class RecordsExample {
         String auditSummary();
     }
 
-    public record AuditedTrade(String tradeId, String action, String performedBy)
+    public record AuditedEmployee(String employeeId, String action, String performedBy)
             implements Auditable {
         @Override
         public String auditSummary() {
-            return String.format("[AUDIT] %s performed '%s' on trade %s",
-                    performedBy, action, tradeId);
+            return String.format("[AUDIT] %s performed '%s' on employee %s",
+                    performedBy, action, employeeId);
         }
     }
 
     // demo main
     public static void main(String[] args) {
-        TradeDetailsRecord trade = TradeDetailsRecord.draft("T001", "AAPL", 1_500_000, "CP01");
-        System.out.println(trade);
-        System.out.println("Is high value: " + trade.isHighValue());
-        System.out.println("Symbol       : " + trade.symbol());     // accessor – no "get" prefix
+        EmployeeRecord emp = EmployeeRecord.pending("E001", "Alice", 95_000, "D01");
+        System.out.println(emp);
+        System.out.println("Is high salary: " + emp.isHighSalary());
+        System.out.println("Name          : " + emp.name());     // accessor – no "get" prefix
 
-        TradeDetailsRecord trade2 = TradeDetailsRecord.draft("T001", "AAPL", 1_500_000, "CP01");
-        System.out.println("equals       : " + trade.equals(trade2)); // true
+        EmployeeRecord emp2 = EmployeeRecord.pending("E001", "Alice", 95_000, "D01");
+        System.out.println("equals        : " + emp.equals(emp2)); // probably false (hireDate differs by ms)
 
-        AuditedTrade audit = new AuditedTrade("T001", "EXECUTE", "john.doe");
+        AuditedEmployee audit = new AuditedEmployee("E001", "PROMOTE", "john.doe");
         System.out.println(audit.auditSummary());
     }
 }
