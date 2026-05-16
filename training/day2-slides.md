@@ -43,10 +43,10 @@ Java 17 ──── 2021 ── LTS ── Sealed Classes GA
 
 ```java
 // Before (Java 9)
-Map<String, List<Trade>> result = new HashMap<String, List<Trade>>();
+Map<String, List<Employee>> result = new HashMap<String, List<Employee>>();
 
 // After (Java 10) — compiler infers the type from the right-hand side
-var result = new HashMap<String, List<Trade>>();
+var result = new HashMap<String, List<Employee>>();
 ```
 
 > `var` is **not** `Object`. The type is still statically known at compile time.
@@ -58,12 +58,12 @@ var result = new HashMap<String, List<Trade>>();
 
 ```java
 // ✅ Local variable with initialiser
-var total = quantity * price;       // inferred: double
-var currency = "USD";               // inferred: String
+var total = headcount * avgSalary;       // inferred: double
+var location = "BANGALORE";               // inferred: String
 var reader = new BufferedReader(…); // inferred: BufferedReader
 
 // ✅ For-each loop variable
-for (var trade : trades) { … }
+for (var employee : employees) { … }
 
 // ✅ Try-with-resources
 try (var conn = dataSource.getConnection()) { … }
@@ -84,7 +84,7 @@ public void process(var trade) { … }
 public var getTrade() { … }
 
 // ❌ Field — compile error
-class Service { var name = "Trading"; }
+class Service { var name = "HR"; }
 
 // ❌ No initialiser — compile error
 var x;
@@ -101,7 +101,7 @@ var cp = null;
 |------------|-----------|
 | Type is obvious from the RHS | Type is unclear without context |
 | Constructor call: `var map = new HashMap<>()` | Complex expression: `var x = doSomething()` |
-| Long generic type: `Map<String, List<Trade>>` | Short type already: `var i = 0` (just use `int`) |
+| Long generic type: `Map<String, List<Employee>>` | Short type already: `var i = 0` (just use `int`) |
 | For-each over a typed collection | Return value of a method you need to look up |
 
 ---
@@ -110,21 +110,21 @@ var cp = null;
 
 ```java
 // Before
-Map<String, List<Trade>> result = new HashMap<>();
-for (Trade trade : trades) {
-    List<Trade> group = result.computeIfAbsent(trade.status(), k -> new ArrayList<>());
-    group.add(trade);
+Map<String, List<Employee>> result = new HashMap<>();
+for (Employee employee : employees) {
+    List<Employee> group = result.computeIfAbsent(employee.department(), k -> new ArrayList<>());
+    group.add(employee);
 }
 
 // After — same logic, less noise
-var result = new HashMap<String, List<Trade>>();
-for (var trade : trades) {
-    var group = result.computeIfAbsent(trade.status(), k -> new ArrayList<>());
-    group.add(trade);
+var result = new HashMap<String, List<Employee>>();
+for (var employee : employees) {
+    var group = result.computeIfAbsent(employee.department(), k -> new ArrayList<>());
+    group.add(employee);
 }
 ```
 
-**Source:** `LocalVarInferenceExamples.groupByStatus_After`
+**Source:** `LocalVarInferenceExamples.groupByDepartment_After`
 
 ---
 
@@ -164,7 +164,7 @@ for (var trade : trades) {
 
 ```java
 // Parse a CSV config — skip blank lines and trim each field
-List<String> symbols = configText.lines()
+List<String> names = configText.lines()
         .filter(line -> !line.isBlank())
         .map(String::strip)
         .filter(line -> !line.startsWith("#"))
@@ -194,8 +194,8 @@ Set<String> immutable = Collections.unmodifiableSet(set);
 
 ```java
 // After — Java 9 factory methods (immutable by definition)
-List<String> symbols  = List.of("AAPL", "MSFT", "GOOG");
-Set<String>  statusSet = Set.of("PENDING", "EXECUTED", "SETTLED");
+List<String> departments  = List.of("ENGINEERING", "MARKETING", "SALES");
+Set<String>  statusSet = Set.of("ONBOARDING", "ACTIVE", "ON_LEAVE");
 Map<String, Integer> slaMap = Map.of(
         "EQUITY",       2,
         "FIXED_INCOME", 1,
@@ -287,7 +287,7 @@ Duration duration = Duration.between(openTime, closeTime); // time-based
 ### The Problem with `Future<T>`
 
 ```java
-Future<String> future = executor.submit(() -> fetchPrice("AAPL"));
+Future<String> future = executor.submit(() -> fetchSalary("AAPL"));
 String price = future.get();  // BLOCKS the calling thread until done
 // No way to chain actions, handle errors functionally, or combine futures
 ```
@@ -295,12 +295,12 @@ String price = future.get();  // BLOCKS the calling thread until done
 ### `CompletableFuture` — Non-blocking Composition
 
 ```java
-// Fetch price and counterparty in parallel, then combine
+// Fetch salary and department in parallel, then combine
 CompletableFuture<String> priceFuture = CompletableFuture.supplyAsync(
-        () -> fetchPrice("AAPL"));
+        () -> fetchSalary("AAPL"));
 
 CompletableFuture<String> cpFuture = CompletableFuture.supplyAsync(
-        () -> fetchCounterparty("CP001"));
+        () -> fetchDepartment("CP001"));
 
 // Combine both when they complete
 CompletableFuture<String> combined = priceFuture.thenCombine(
@@ -366,9 +366,9 @@ CompletableFuture<HttpResponse<String>> async = client.sendAsync(request,
 ```java
 int sla;
 switch (status) {
-    case DRAFT:    sla = 24; break;
-    case PENDING:  sla = 4;  break;
-    case EXECUTED: sla = 1;  break;
+    case APPLIED:    sla = 24; break;
+    case ONBOARDING:  sla = 4;  break;
+    case ACTIVE: sla = 1;  break;
     default:       throw new IllegalArgumentException(status.toString());
 }
 return sla;
@@ -377,11 +377,11 @@ return sla;
 **After — switch expression, no fall-through, no break**
 ```java
 return switch (status) {
-    case DRAFT      -> 24;
-    case PENDING    -> 4;
-    case EXECUTED   -> 1;
-    case SETTLED    -> 0;
-    case REJECTED,
+    case APPLIED      -> 24;
+    case ONBOARDING    -> 4;
+    case ACTIVE   -> 1;
+    case ON_LEAVE    -> 0;
+    case RESIGNED,
          CANCELLED  -> 48;   // multiple labels, no fall-through
 };
 // Compiler error if a new enum value is added without a case — no silent gaps!
@@ -389,9 +389,9 @@ return switch (status) {
 
 **`yield` for multi-statement block arms:**
 ```java
-case REJECTED -> {
-    String base = "Trade was REJECTED";
-    yield base + " – please review and resubmit";
+case RESIGNED -> {
+    String base = "Employee RESIGNED";
+    yield base + " – please complete offboarding";
 }
 ```
 
@@ -409,7 +409,7 @@ case REJECTED -> {
 ```java
 // Before
 Map<String, Integer> slaMap = new HashMap<String, Integer>();
-for (TradeStatus s : TradeStatus.values()) {
+for (EmployeeStatus s : EmployeeStatus.values()) {
     slaMap.put(s.name(), getSla(s));
 }
 
@@ -420,9 +420,9 @@ for (TradeStatus s : TradeStatus.values()) {
 ```java
 // Before
 Set<String> terminal = new HashSet<>();
-terminal.add("SETTLED");
-terminal.add("REJECTED");
-terminal.add("CANCELLED");
+terminal.add("ON_LEAVE");
+terminal.add("RESIGNED");
+terminal.add("TERMINATED");
 
 // After: one line with Set.of
 ```
@@ -430,8 +430,8 @@ terminal.add("CANCELLED");
 ### Task C — Replace `trim()` with `strip()` and null-check with `isBlank()` (3 min)
 ```java
 // Before
-if (symbol != null && !symbol.trim().isEmpty()) {
-    process(symbol.trim().toUpperCase());
+if (name != null && !name.trim().isEmpty()) {
+    process(name.trim().toUpperCase());
 }
 
 // After: use strip() + isBlank()
@@ -441,10 +441,10 @@ if (symbol != null && !symbol.trim().isEmpty()) {
 ```java
 // Before
 public int getSla(String status) {
-    if ("DRAFT".equals(status))      return 24;
-    else if ("PENDING".equals(status)) return 4;
-    else if ("EXECUTED".equals(status)) return 1;
-    else if ("SETTLED".equals(status))  return 0;
+    if ("APPLIED".equals(status))      return 24;
+    else if ("ONBOARDING".equals(status)) return 4;
+    else if ("ACTIVE".equals(status)) return 1;
+    else if ("ON_LEAVE".equals(status))  return 0;
     else return 48;
 }
 
@@ -459,23 +459,23 @@ public int getSla(String status) {
 var slaMap = new HashMap<String, Integer>();
 
 // B
-Set<String> terminal = Set.of("SETTLED", "REJECTED", "CANCELLED");
+Set<String> terminal = Set.of("ON_LEAVE", "RESIGNED", "TERMINATED");
 
 // C
-if (symbol != null && !symbol.strip().isBlank()) {
-    process(symbol.strip().toUpperCase());
+if (name != null && !name.strip().isBlank()) {
+    process(name.strip().toUpperCase());
 }
 // Even better with Optional:
-Optional.ofNullable(symbol)
+Optional.ofNullable(name)
         .filter(s -> !s.strip().isBlank())
         .ifPresent(s -> process(s.strip().toUpperCase()));
 
 // D
 return switch (status) {
-    case "DRAFT"     -> 24;
-    case "PENDING"   -> 4;
-    case "EXECUTED"  -> 1;
-    case "SETTLED"   -> 0;
+    case "APPLIED"     -> 24;
+    case "ONBOARDING"   -> 4;
+    case "ACTIVE"  -> 1;
+    case "ON_LEAVE"   -> 0;
     default          -> 48;
 };
 ```

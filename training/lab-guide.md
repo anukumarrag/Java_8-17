@@ -61,18 +61,18 @@ public List<String> toUpperCase(List<String> items)
 // Use Function.andThen()
 public String trimAndUpperCase(String input)
 
-// Task E: Create a Predicate that is true when a trade symbol has length > 4 AND starts with 'A'
+// Task E: Create a Predicate that is true when an employee name has length > 4 AND starts with 'A'
 // Use Predicate.and()
-public Predicate<String> longASymbol()
+public Predicate<String> longAName()
 ```
 
 **Expected outputs:**
 ```
-sortAlphabetically(["MSFT","AAPL","GOOG"]) → ["AAPL","GOOG","MSFT"]
-filterByPrefix(["ACTIVE_T1","PENDING_T2","ACTIVE_T3"], "ACTIVE") → ["ACTIVE_T1","ACTIVE_T3"]
-toUpperCase(["aapl","msft"]) → ["AAPL","MSFT"]
-trimAndUpperCase("  aapl  ") → "AAPL"
-longASymbol().test("AAPL") → true,  longASymbol().test("ABB") → false (length <= 4)
+sortAlphabetically(["ENGINEERING","MARKETING","SALES"]) → ["ENGINEERING","MARKETING","SALES"]
+filterByPrefix(["ACTIVE_E1","ONBOARDING_E2","ACTIVE_E3"], "ACTIVE") → ["ACTIVE_E1","ACTIVE_E3"]
+toUpperCase(["alice","bob"]) → ["ALICE","BOB"]
+trimAndUpperCase("  alice  ") → "ALICE"
+longAName().test("ENGINEERING") → true,  longAName().test("HR") → false (length <= 4),  longAName().test("ABB") → false (length <= 4)
 ```
 
 ---
@@ -83,39 +83,39 @@ longASymbol().test("AAPL") → true,  longASymbol().test("ABB") → false (lengt
 
 **Setup — use this trade list:**
 ```java
-List<Trade> trades = List.of(
-    new Trade("T001", "AAPL", 3_000_000, "ACTIVE"),
-    new Trade("T002", "MSFT",   500_000, "ACTIVE"),
-    new Trade("T003", "GOOG", 1_200_000, "PENDING"),
-    new Trade("T004", "TSLA", 2_100_000, "ACTIVE"),
-    new Trade("T005", "NVDA", 4_500_000, "ACTIVE"),
-    new Trade("T006", "META",   800_000, "ACTIVE"),
-    new Trade("T007", "AMZN", 1_800_000, "REJECTED")
+List<Employee> employees = List.of(
+    new Employee("T001", "AAPL", 3_000_000, "ACTIVE"),
+    new Employee("T002", "MSFT",   500_000, "ACTIVE"),
+    new Employee("T003", "GOOG", 1_200_000, "ONBOARDING"),
+    new Employee("T004", "TSLA", 2_100_000, "ACTIVE"),
+    new Employee("T005", "NVDA", 4_500_000, "ACTIVE"),
+    new Employee("T006", "META",   800_000, "ACTIVE"),
+    new Employee("T007", "AMZN", 1_800_000, "RESIGNED")
 );
 ```
 
 **Implement these 5 methods using a single stream pipeline each:**
 
 ```java
-// 1. IDs of ACTIVE trades sorted by notional DESC, top 3, comma-separated
-public String topThreeActiveIds(List<Trade> trades)
-// Expected: "T005, T001, T004"
+// 1. IDs of ACTIVE employees sorted by salary DESC, top 3, comma-separated
+public String topThreeActiveIds(List<Employee> employees)
+// Expected: "E005, E001, E004"
 
-// 2. Total notional of all ACTIVE trades
-public double totalActiveNotional(List<Trade> trades)
-// Expected: 12_100_000.0
+// 2. Total salary of all ACTIVE employees
+public double totalActiveSalary(List<Employee> employees)
+// Expected: 570_000.0
 
-// 3. Distinct symbols where notional > 1_000_000, sorted alphabetically
-public List<String> highValueSymbols(List<Trade> trades)
-// Expected: ["AAPL", "NVDA", "TSLA"]
+// 3. Distinct symbols where salary > 1_000_000, sorted alphabetically
+public List<String> highSalaryNames(List<Employee> employees)
+// Expected: ["ENGINEERING", "FINANCE"]
 
-// 4. Map of status → count of trades
-public Map<String, Long> countByStatus(List<Trade> trades)
-// Expected: {ACTIVE=5, PENDING=1, REJECTED=1}
+// 4. Map of status → count of employees
+public Map<String, Long> countByDepartment(List<Employee> employees)
+// Expected: {ENGINEERING=2, MARKETING=2, SALES=1, FINANCE=1, LEGAL=1}
 
-// 5. Is there any trade with notional > 4_000_000?
-public boolean hasVeryHighValue(List<Trade> trades)
-// Expected: true (NVDA = 4.5M)
+// 5. Is there any trade with salary > 4_000_000?
+public boolean hasVeryHighSalary(List<Employee> employees)
+// Expected: true (Eve = 150K)
 ```
 
 ---
@@ -127,25 +127,25 @@ public boolean hasVeryHighValue(List<Trade> trades)
 ```java
 // Given these records
 record Address(String street, String city) {}
-record Counterparty(String id, String name, Address address) {}
-record Trade(String id, Counterparty counterparty) {}
+record Department(String id, String name, Address address) {}
+record Employee(String id, Department department) {}
 
 // Implement WITHOUT any null checks (use Optional chaining):
 
 // 1. Get city, return "UNKNOWN" if any link is null
-public String getCity(Trade trade)
+public String getCity(Employee employee)
 
-// 2. Get counterparty name from a repository method that returns Optional<Counterparty>
+// 2. Get department name from a repository method that returns Optional<Department>
 //    Return "NOT_FOUND" if absent
-public String getCounterpartyName(String id)
+public String getDepartmentName(String id)
 
-// 3. Resolve a symbol: strip the input, if blank return "DEFAULT_SYM"
+// 3. Resolve a name: strip the input, if blank return "DEFAULT_NAME"
 //    Use Optional + filter + orElseGet
-public String resolveSymbol(String raw)
+public String resolveName(String raw)
 
-// 4. Throw IllegalArgumentException("Counterparty not found: " + id)
-//    if counterparty is absent
-public Counterparty requireCounterparty(String id)
+// 4. Throw IllegalArgumentException("Department not found: " + id)
+//    if department is absent
+public Department requireDepartment(String id)
 ```
 
 ---
@@ -160,7 +160,7 @@ public Counterparty requireCounterparty(String id)
 
 ### Lab 2A — `var` Adoption `[5 min]`
 
-**Instructions:** Open `LocalVarInferenceExamples.java`. Find `groupByStatus_Before` and rewrite it as `groupByStatus_After` using `var` for all local variables. Ensure:
+**Instructions:** Open `LocalVarInferenceExamples.java`. Find `groupByDepartment_Before` and rewrite it as `groupByDepartment_After` using `var` for all local variables. Ensure:
 - `var result = new HashMap<…>()`  
 - `var trade : trades` in the for-each  
 - `var group = result.computeIfAbsent(…)`
@@ -179,19 +179,19 @@ Then identify 3 places in the method where `var` would be **inappropriate** (e.g
 // Task A: Create an immutable list of 4 trade statuses
 // BEFORE:
 List<String> statuses = new ArrayList<>();
-statuses.add("PENDING"); statuses.add("EXECUTED");
-statuses.add("SETTLED"); statuses.add("REJECTED");
+statuses.add("ONBOARDING"); statuses.add("ACTIVE");
+statuses.add("ON_LEAVE"); statuses.add("RESIGNED");
 statuses = Collections.unmodifiableList(statuses);
 
 // Task B: Create an immutable Set of valid asset classes
 // BEFORE: 5 add() calls + unmodifiableSet()
 
-// Task C: Create an immutable Map of asset class → settlement days
+// Task C: Create an immutable Map of asset class → review days
 // EQUITY→2, FIXED_INCOME→1, FOREX→1, COMMODITY→3
 // BEFORE: 4 put() calls + unmodifiableMap()
 
 // Task D: Use stream().collect(Collectors.toUnmodifiableList())
-// to filter ACTIVE trades and return an immutable list
+// to filter ACTIVE employees and return an immutable list
 ```
 
 ---
@@ -203,10 +203,10 @@ statuses = Collections.unmodifiableList(statuses);
 ```java
 // Replace each "Before" idiom with the modern Java 11 equivalent:
 
-// 1. Before: symbol != null && !symbol.trim().isEmpty()
+// 1. Before: name != null && !name.trim().isEmpty()
 //    After:  ??? (hint: isBlank + strip)
 
-// 2. Before: symbol.trim().toUpperCase()
+// 2. Before: name.trim().toUpperCase()
 //    After:  ???
 
 // 3. Before: String.join("\n", lineList)  where lineList was built with a loop
@@ -225,21 +225,21 @@ statuses = Collections.unmodifiableList(statuses);
 ```java
 // Refactor these if-else chains to switch expressions:
 
-// Task A: Map TradeStatus to an HTTP status code
+// Task A: Map EmployeeStatus to an HTTP status code
 // DRAFT→202, PENDING→202, EXECUTED→200, SETTLED→200,
 // REJECTED→422, CANCELLED→410
-public int toHttpStatus(TradeStatus status)  // use switch expression
+public int toHttpStatus(EmployeeStatus status)  // use switch expression
 
-// Task B: Map AssetClass to a notification priority string
-// EQUITY→"HIGH", FIXED_INCOME→"MEDIUM", DERIVATIVE→"HIGH",
-// COMMODITY→"MEDIUM", FOREX→"LOW"
-public String notificationPriority(AssetClass ac)  // use switch expression
+// Task B: Map EmployeeLevel to a notification priority string
+// JUNIOR→"LOW", MID→"MEDIUM", SENIOR→"HIGH",
+// LEAD→"HIGH", MANAGER→"CRITICAL"
+public String notificationPriority(EmployeeLevel level)  // use switch expression
 
 // Task C: Yield multi-line result
 // For REJECTED: include "Review required – contact operations"
 // For CANCELLED: include "Audit trail preserved"
 // For all others: "Status: " + status.name()
-public String statusDetail(TradeStatus status)  // use yield in block arms
+public String statusDetail(EmployeeStatus status)  // use yield in block arms
 ```
 
 ---
@@ -257,8 +257,8 @@ public String statusDetail(TradeStatus status)  // use yield in block arms
 **Task:** Convert the following POJO to a record with full validation.
 
 ```java
-// BEFORE — CustomerDTO (copy this to a new file CustomerRecord.java and convert it)
-public class CustomerDTO {
+// BEFORE — EmployeeDTO (copy this to a new file CustomerRecord.java and convert it)
+public class EmployeeDTO {
     private final String customerId;   // must not be blank
     private final String name;         // must not be null
     private final String email;        // must contain "@"
@@ -291,19 +291,19 @@ String esQuery = "{\n" +
                  "    \"bool\": {\n" +
                  "      \"must\": [\n" +
                  "        { \"term\": { \"status\": \"" + status + "\" } },\n" +
-                 "        { \"range\": { \"notional\": { \"gte\": " + minNotional + " } } }\n" +
+                 "        { \"range\": { \"salary\": { \"gte\": " + minNotional + " } } }\n" +
                  "      ]\n" +
                  "    }\n" +
                  "  }\n" +
                  "}";
 
 // B — Spring @Query-style JPQL
-String jpql = "SELECT t FROM Trade t " +
-              "WHERE t.status = :status " +
-              "AND t.symbol IN :symbols " +
-              "ORDER BY t.settlementDate ASC";
+String jpql = "SELECT e FROM Employee e " +
+              "WHERE e.status = :status " +
+              "AND e.name IN :names " +
+              "ORDER BY e.reviewDate ASC";
 
-// C — HTML email template with tradeId, symbol, notional, status variables
+// C — HTML email template with employeeId, name, salary, status variables
 String html = "<html>...(build it)...</html>";
 ```
 
@@ -315,11 +315,11 @@ String html = "<html>...(build it)...</html>";
 
 ```java
 record Address(String city) {}
-record CP(String name, Address address) {}
-record Trade(String id, CP counterparty) {}
+record Dept(String name, Address address) {}
+record Employee(String id, Dept department) {}
 
-Trade t = new Trade("T001", new CP("Acme", null));  // address is null
-System.out.println(t.counterparty().address().city());
+Employee e = new Employee("E001", new Dept("Engineering", null));  // address is null
+System.out.println(e.department().address().city());
 ```
 
 **Questions:**
@@ -340,13 +340,13 @@ System.out.println(t.counterparty().address().city());
 
 ### Workshop Task 1 — DTO → Record `[10 min]`
 
-**Reference:** `module3/before/TradeTransaction.java` → `module3/after/TradeTransactionRecord.java`
+**Reference:** `module3/before/Employee.java` → `module3/after/EmployeeRecord.java`
 
 **Steps:**
-1. Open `module3/before/TradeTransaction.java` — study the fields and constructor validation.
-2. Create the equivalent `TradeTransactionRecord` as a record.
+1. Open `module3/before/Employee.java` — study the fields and constructor validation.
+2. Create the equivalent `EmployeeRecord` as a record.
 3. Move all constructor validation into a compact constructor.
-4. Keep `isHighValue()` and `toDisplayString()` as instance methods.
+4. Keep `isHighSalary()` and `toDisplayString()` as instance methods.
 5. Run `WorkshopTest.testTask1_RecordCreation` — it must pass.
 
 ---
@@ -356,24 +356,24 @@ System.out.println(t.counterparty().address().city());
 **Reference:** `module3/before/TransactionService.buildSearchQuery()` → `module3/after/ModernTransactionService.buildSearchQuery()`
 
 **Steps:**
-1. Find `buildSearchQuery(String status, String symbol)` in `TransactionService.java`.
+1. Find `buildEmployeeQuery(String status, String name)` in `TransactionService.java`.
 2. Replace the multi-line concatenation with a single text block.
-3. Use `.formatted(status, symbol)` for parameter injection.
+3. Use `.formatted(status, name)` for parameter injection.
 4. Run `WorkshopTest.testTask2_TextBlockQuery` — it must pass.
 
 ---
 
 ### Workshop Task 3 — Enum → Sealed Hierarchy `[10 min]`
 
-**Reference:** `module3/before/TransactionService.TradeEventLegacy` → `module3/after/TradeEvent.java` + event records
+**Reference:** `module3/before/TransactionService.EmployeeEventLegacy` → `module3/after/EmployeeEvent.java` + event records
 
 **Steps:**
-1. In `module3/after/`, the sealed interface `TradeEvent` and its 4 record implementations already exist.
-2. Study each record: `TradeCreatedEvent`, `TradeUpdatedEvent`, `TradeExecutedEvent`, `TradeRejectedEvent`.
+1. In `module3/after/`, the sealed interface `EmployeeEvent` and its 4 record implementations already exist.
+2. Study each record: `EmployeeHiredEvent`, `EmployeeUpdatedEvent`, `EmployeePromotedEvent`, `EmployeeTerminatedEvent`.
 3. Note what data each carries that was impossible with the legacy enum.
 4. Run `WorkshopTest.testTask3_SealedEvents` — it must pass.
 
-**Reflection question:** What happens at compile time if you add a `TradePricedEvent` to the `permits` list but forget to add a case in `processEvent`?
+**Reflection question:** What happens at compile time if you add a `EmployeePricedEvent` to the `permits` list but forget to add a case in `processEvent`?
 
 ---
 
@@ -384,7 +384,7 @@ System.out.println(t.counterparty().address().city());
 **Steps:**
 1. Open `TransactionService.processEventLegacy` — count the number of casts.
 2. Open `ModernTransactionService.processEvent` — verify zero casts.
-3. Extend `processEvent` to add a guard: if `TradeCreatedEvent` has notional > 5,000,000, prepend `"[LARGE TRADE] "` to the message.
+3. Extend `processEvent` to add a guard: if `EmployeeHiredEvent` has salary > 5,000,000, prepend `"[LARGE TRADE] "` to the message.
 4. Run `WorkshopTest.testTask4_PatternMatchingDispatch` — it must pass.
 
 ---
@@ -422,11 +422,11 @@ public boolean confirmVirtualExecution() throws Exception
 
 **File:** `bonus/recordpatterns/RecordPatternsExamples.java`
 
-1. Study `RecordPatternsExamples.describeTradeCity_After` — notice how it deconstructs three levels of nesting in one `instanceof`.
-2. Write a method `classifyTrade(Object obj)` that:
-   - Deconstructs `Trade(String id, String symbol, Money(double amt, String cur), Counterparty cp)`
-   - Returns `"Large USD trade in " + city` if notional > 1M and currency is USD
-   - Returns `"Standard trade"` otherwise
+1. Study `RecordPatternsExamples.describeEmployeeCity_After` — notice how it deconstructs three levels of nesting in one `instanceof`.
+2. Write a method `classifyEmployee(Object obj)` that:
+   - Deconstructs `Employee(String id, String name, Money(double amt, String cur), Department dept)`
+   - Returns `"Large USD employee in " + city` if salary > 100K and currency is USD
+   - Returns `"Standard employee"` otherwise
    - Uses `when` guards and nested record patterns
 
 ---
@@ -438,12 +438,12 @@ public boolean confirmVirtualExecution() throws Exception
 ```java
 // Replace the verbose Java 17 idioms with Java 21 equivalents:
 
-// 1. Get the first trade from a List<Trade>
-// Before: trades.get(0)
+// 1. Get the first employee from a List<Employee>
+// Before: employees.get(0)
 // After:  ???
 
-// 2. Get the last trade from a List<Trade>
-// Before: trades.get(trades.size() - 1)
+// 2. Get the last employee from a List<Employee>
+// Before: employees.get(employees.size() - 1)
 // After:  ???
 
 // 3. Iterate a LinkedHashMap in reverse insertion order

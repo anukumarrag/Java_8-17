@@ -109,10 +109,10 @@
   ```java
   // Before
   List<String> statuses = new ArrayList<>();
-  statuses.add("PENDING"); statuses.add("EXECUTED");
+  statuses.add("ONBOARDING"); statuses.add("ACTIVE");
   
   // After
-  List<String> statuses = List.of("PENDING", "EXECUTED");
+  List<String> statuses = List.of("ONBOARDING", "ACTIVE");
   ```
 - Replace `Collections.unmodifiableList(list)` with `List.copyOf(list)` where a defensive copy is needed
 - Replace `stream.collect(Collectors.toList())` with `stream.toList()` (Java 16, unmodifiable)
@@ -126,9 +126,9 @@
 
 **Actions:**
 - Apply `var` where the type is **obvious from the right-hand side**:
-  - Constructor calls: `var service = new TradeService()`
-  - Long generic types: `var map = new HashMap<String, List<Trade>>()`
-  - For-each loops: `for (var trade : trades)`
+  - Constructor calls: `var service = new EmployeeService()`
+  - Long generic types: `var map = new HashMap<String, List<Employee>>()`
+  - For-each loops: `for (var employee : employees)`
   - Try-with-resources: `try (var conn = dataSource.getConnection())`
 - **Do not** apply `var` mechanically everywhere — readability must improve
 
@@ -154,7 +154,7 @@ grep -n "Map<.*Map<.*>" src/main/java/ -r
   1. Check it doesn't extend another class (records can't extend)
   2. Check all fields are `final` (or can be made so)
   3. Convert: replace class + all boilerplate with `record`
-  4. Update callers: replace `getTrade()` → `trade()` accessor names
+  4. Update callers: replace `getEmployee()` → `employee()` accessor names
 - Remove Lombok `@Value` and `@Data` annotations after conversion
 
 **Tip:** Rename accessors systematically with IDE refactoring — *Rename* each `getXxx()` to `xxx()`.
@@ -207,13 +207,13 @@ grep -n "Map<.*Map<.*>" src/main/java/ -r
 - Convert each pair:
   ```java
   // Before
-  if (event instanceof TradeCreated) {
-      TradeCreated c = (TradeCreated) event;  // redundant cast
+  if (event instanceof EmployeeHiredEvent) {
+      EmployeeHiredEvent c = (EmployeeHiredEvent) event;  // redundant cast
       handle(c);
   }
   
   // After
-  if (event instanceof TradeCreated c) {
+  if (event instanceof EmployeeHiredEvent c) {
       handle(c);
   }
   ```
@@ -246,7 +246,7 @@ mvn jacoco:report   # if JaCoCo is configured
 |---------|---------|
 | `--illegal-access` becomes an error | Add specific `--add-opens` flags or upgrade the dependency that uses reflection |
 | `List.of()` throws NPE | Check for null values before migration; use `new ArrayList<>()` then `Collections.unmodifiableList()` if nulls are valid |
-| Record accessor names break callers | Use IDE rename refactoring: `getSymbol()` → `symbol()` |
+| Record accessor names break callers | Use IDE rename refactoring: `getName()` → `name()` |
 | `final` fields after record migration break JSON deserialisation | Add `@JsonCreator` or upgrade Jackson to 2.13+ (native record support) |
 | Sealed class in a multi-module project | All permitted subtypes must be in the same package or module |
 | `var` obscures the type in code review | Use explicit types for public-facing code; `var` only for local implementation details |

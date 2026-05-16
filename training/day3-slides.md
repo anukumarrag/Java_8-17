@@ -13,15 +13,15 @@
 > *"I'm going to show you a class that holds exactly 5 fields.  
 > In Java 8 it takes 80 lines. Java 17 fixes this in **one line**."*
 
-### The 80-Line DTO (show full `TradeDetailsPojo` from `RecordsExample.java`)
+### The 80-Line DTO (show full `EmployeePojo` from `RecordsExample.java`)
 
 ```java
-public class TradeDetailsPojo {
-    private final String tradeId;
-    private final String symbol;
-    private final double notional;
-    private final String counterpartyId;
-    private final LocalDate settlementDate;
+public class EmployeePojo {
+    private final String employeeId;
+    private final String name;
+    private final double salary;
+    private final String departmentId;
+    private final LocalDate reviewDate;
     private final String status;
 
     // 6-param constructor…
@@ -36,13 +36,13 @@ public class TradeDetailsPojo {
 ### The Java 17 Answer
 
 ```java
-public record TradeDetailsRecord(
-        String tradeId, String symbol, double notional,
-        String counterpartyId, LocalDate settlementDate, String status) {
+public record EmployeeRecord(
+        String employeeId, String name, double salary,
+        String departmentId, LocalDate reviewDate, String status) {
     // compact constructor for validation
-    public TradeDetailsRecord {
-        Objects.requireNonNull(tradeId, "tradeId required");
-        if (notional < 0) throw new IllegalArgumentException("notional must be >= 0");
+    public EmployeeRecord {
+        Objects.requireNonNull(employeeId, "employeeId required");
+        if (salary < 0) throw new IllegalArgumentException("salary must be >= 0");
     }
 }
 // Total: ~8 lines. The compiler writes everything else.
@@ -61,8 +61,8 @@ public record TradeDetailsRecord(
 ### What the Compiler Generates for Free
 
 ```java
-public record TradeDetailsRecord(String tradeId, String symbol, double notional,
-                                  String counterpartyId, LocalDate settlementDate,
+public record EmployeeRecord(String employeeId, String name, double salary,
+                                  String departmentId, LocalDate reviewDate,
                                   String status) {}
 ```
 
@@ -70,11 +70,11 @@ The compiler automatically creates:
 
 | Generated member | What it looks like |
 |------------------|--------------------|
-| Canonical constructor | `public TradeDetailsRecord(String tradeId, String symbol, …)` |
-| Accessor for each field | `tradeId()`, `symbol()`, `notional()` — **no `get` prefix** |
+| Canonical constructor | `public EmployeeRecord(String employeeId, String name, …)` |
+| Accessor for each field | `employeeId()`, `name()`, `salary()` — **no `get` prefix** |
 | `equals(Object)` | Based on ALL components |
 | `hashCode()` | Based on ALL components |
-| `toString()` | `TradeDetailsRecord[tradeId=T001, symbol=AAPL, …]` |
+| `toString()` | `EmployeeRecord[employeeId=E001, name=Alice, …]` |
 
 ---
 
@@ -82,60 +82,60 @@ The compiler automatically creates:
 
 ```java
 // Java 7 POJO — getter convention
-trade.getTradeId();   trade.getSymbol();   trade.getNotional();
+employee.getEmployeeId();   employee.getName();   employee.getSalary();
 
 // Java 16 Record — accessor (same name as the component)
-trade.tradeId();      trade.symbol();      trade.notional();
+employee.employeeId();      employee.name();      employee.salary();
 ```
 
 > This aligns with method references:
-> `trades.stream().map(Trade::symbol)` instead of `Trade::getSymbol`
+> `employees.stream().map(Employee::name)` instead of `Employee::getName`
 
 ---
 
 ### The Compact Constructor — Validation Without Repetition
 
 ```java
-public record TradeDetailsRecord(
-        String tradeId, String symbol, double notional,
-        String counterpartyId, LocalDate settlementDate, String status) {
+public record EmployeeRecord(
+        String employeeId, String name, double salary,
+        String departmentId, LocalDate reviewDate, String status) {
 
     // Compact constructor: no parameter list, no explicit assignments
     // The compiler assigns all fields AFTER this block runs
-    public TradeDetailsRecord {
-        Objects.requireNonNull(tradeId,        "tradeId required");
-        Objects.requireNonNull(symbol,         "symbol required");
-        Objects.requireNonNull(counterpartyId, "counterpartyId required");
-        Objects.requireNonNull(settlementDate, "settlementDate required");
+    public EmployeeRecord {
+        Objects.requireNonNull(employeeId,     "employeeId required");
+        Objects.requireNonNull(name,           "name required");
+        Objects.requireNonNull(departmentId,   "departmentId required");
+        Objects.requireNonNull(reviewDate,     "reviewDate required");
         Objects.requireNonNull(status,         "status required");
-        if (notional < 0) throw new IllegalArgumentException("notional must be >= 0");
+        if (salary < 0) throw new IllegalArgumentException("salary must be >= 0");
     }
 }
 ```
 
-> **Key:** You write the validation; the compiler writes `this.tradeId = tradeId;` etc.
+> **Key:** You write the validation; the compiler writes `this.employeeId = employeeId;` etc.
 
 ---
 
 ### What You CAN Add to a Record
 
 ```java
-public record TradeDetailsRecord(…) {
+public record EmployeeRecord(…) {
 
     // ✅ Custom instance method (derived value)
-    public boolean isHighValue() {
-        return notional > 1_000_000.0;
+    public boolean isHighSalary() {
+        return salary > 100_000.0;
     }
 
     // ✅ Static factory method
-    public static TradeDetailsRecord draft(String tradeId, String symbol,
-                                           double notional, String counterpartyId) {
-        return new TradeDetailsRecord(tradeId, symbol, notional,
-                counterpartyId, LocalDate.now(), "DRAFT");
+    public static EmployeeRecord draft(String employeeId, String name,
+                                           double salary, String departmentId) {
+        return new EmployeeRecord(employeeId, name, salary,
+                departmentId, LocalDate.now(), "APPLIED");
     }
 
     // ✅ Static field (constant)
-    public static final double HIGH_VALUE_THRESHOLD = 1_000_000.0;
+    public static final double HIGH_SALARY_THRESHOLD = 100_000.0;
 }
 ```
 
@@ -162,17 +162,17 @@ public interface Auditable {
     String auditSummary();
 }
 
-public record AuditedTrade(String tradeId, String action, String performedBy)
+public record AuditedEmployee(String employeeId, String action, String performedBy)
         implements Auditable {
     @Override
     public String auditSummary() {
         return "[AUDIT] %s performed '%s' on trade %s"
-                .formatted(performedBy, action, tradeId);
+                .formatted(performedBy, action, employeeId);
     }
 }
 ```
 
-**Source:** `RecordsExample.AuditedTrade`
+**Source:** `RecordsExample.AuditedEmployee`
 
 ---
 
@@ -186,30 +186,30 @@ Pair<String, Double> priceQuote = new Pair<>("AAPL", 182.50);
 System.out.println(priceQuote.first());   // → "AAPL"
 
 // Nested records compose naturally
-public record TradeConfirmation(
-        TradeDetailsRecord trade,
+public record EmployeeConfirmation(
+        EmployeeRecord employee,
         String confirmationRef,
         LocalDate confirmedAt
 ) {}
 ```
 
-**Source:** `RecordsExample.Pair`, `RecordsExample.TradeConfirmation`
+**Source:** `RecordsExample.Pair`, `RecordsExample.EmployeeConfirmation`
 
 ---
 
 ## 💻 Hands-On 1 — DTO → Record Conversion `[15 min]`
 
-> **Convert the following `CustomerDTO` POJO to a record with validation.**
+> **Convert the following `EmployeeDTO` POJO to a record with validation.**
 
 ```java
-// Before — CustomerDTO.java (POJO, ~60 lines)
-public class CustomerDTO {
+// Before — EmployeeDTO.java (POJO, ~60 lines)
+public class EmployeeDTO {
     private final String customerId;
     private final String name;
     private final String email;
     private final String tier;   // "GOLD", "SILVER", "BRONZE"
 
-    public CustomerDTO(String customerId, String name, String email, String tier) {
+    public EmployeeDTO(String customerId, String name, String email, String tier) {
         if (customerId == null || customerId.isBlank()) throw new …;
         // ... 3 more null checks ...
         this.customerId = customerId; this.name = name;
@@ -227,7 +227,7 @@ public class CustomerDTO {
 ```
 
 > **Your task:**
-> 1. Convert to a `record CustomerDTO`
+> 1. Convert to a `record EmployeeDTO`
 > 2. Move validation into a compact constructor
 > 3. Keep the `isGoldTier()` convenience method
 
@@ -235,13 +235,13 @@ public class CustomerDTO {
 <summary>💡 Reveal solution</summary>
 
 ```java
-public record CustomerDTO(
+public record EmployeeDTO(
         String customerId,
         String name,
         String email,
         String tier) {
 
-    public CustomerDTO {
+    public EmployeeDTO {
         if (customerId == null || customerId.isBlank())
             throw new IllegalArgumentException("customerId required");
         Objects.requireNonNull(name,  "name required");
@@ -269,21 +269,21 @@ public record CustomerDTO(
 
 ```java
 // SQL — hard to read, easy to break (missing space before FROM)
-String sql = "SELECT t.trade_id, t.symbol, t.notional, " +
-             "       t.counterparty_id, t.settlement_date " +
-             "FROM   trades t " +
-             "JOIN   counterparties c ON c.id = t.counterparty_id " +
-             "WHERE  t.status = '" + status + "' " +
-             "  AND  t.settlement_date >= CURRENT_DATE " +
-             "ORDER  BY t.settlement_date ASC";
+String sql = "SELECT e.employee_id, e.name, e.salary, " +
+             "       e.department_id, e.review_date " +
+             "FROM   employees t " +
+             "JOIN   counterparties c ON c.id = e.department_id " +
+             "WHERE  e.status = '" + status + "' " +
+             "  AND  e.review_date >= CURRENT_DATE " +
+             "ORDER  BY e.review_date ASC";
 ```
 
 ```java
 // JSON — quote escaping makes this nearly unreadable
 String json = "{\n" +
-              "  \"tradeId\": \"" + tradeId + "\",\n" +
-              "  \"symbol\": \"" + symbol + "\",\n" +
-              "  \"notional\": " + notional + "\n" +
+              "  \"employeeId\": \"" + employeeId + "\",\n" +
+              "  \"name\": \"" + name + "\",\n" +
+              "  \"salary\": " + salary + "\n" +
               "}";
 ```
 
@@ -294,16 +294,16 @@ String json = "{\n" +
 ```java
 // SQL — reads exactly like it looks in a SQL editor
 String sql = """
-        SELECT t.trade_id,
-               t.symbol,
-               t.notional,
-               t.counterparty_id,
-               t.settlement_date
-        FROM   trades t
-        JOIN   counterparties c ON c.id = t.counterparty_id
-        WHERE  t.status = '%s'
-          AND  t.settlement_date >= CURRENT_DATE
-        ORDER  BY t.settlement_date ASC
+        SELECT e.employee_id,
+               e.name,
+               e.salary,
+               e.department_id,
+               e.review_date
+        FROM   employees e
+        JOIN   departments d ON d.id = e.department_id
+        WHERE  e.status = '%s'
+          AND  e.review_date >= CURRENT_DATE
+        ORDER  BY e.review_date ASC
         """.formatted(status);
 ```
 
@@ -311,15 +311,15 @@ String sql = """
 // JSON — no escaping needed for internal quotes
 String json = """
         {
-          "tradeId": "%s",
-          "symbol": "%s",
-          "notional": %s,
-          "status": "PENDING"
+          "employeeId": "%s",
+          "name": "%s",
+          "salary": %s,
+          "status": "ONBOARDING"
         }
-        """.formatted(tradeId, symbol, notional);
+        """.formatted(employeeId, name, salary);
 ```
 
-**Source:** `TextBlockExamples.buildTradeQuery_After`, `TextBlockExamples.buildTradeJson_After`
+**Source:** `TextBlockExamples.buildEmployeeQuery_After`, `TextBlockExamples.buildEmployeeJson_After`
 
 ---
 
@@ -327,7 +327,7 @@ String json = """
 
 ```
 Line in source:           |        SELECT *
-                          |        FROM trades
+                          |        FROM employees
                           |        """;
                           ^--------^ (8 spaces of indentation)
 ```
@@ -377,16 +377,16 @@ String withEscapes = "line1\\nline2".translateEscapes();  // → "line1\nline2"
 // Without continuation — multiline string
 String multiline = """
         SELECT trade_id
-        FROM trades
+        FROM employees
         """;
 
 // With \ — the newline is suppressed, result is a single line
 String singleLine = """
         SELECT trade_id \
-        FROM trades \
+        FROM employees \
         WHERE status = 'ACTIVE'
         """;
-// → "SELECT trade_id FROM trades WHERE status = 'ACTIVE'\n"
+// → "SELECT trade_id FROM employees WHERE status = 'ACTIVE'\n"
 ```
 
 ---
@@ -400,8 +400,8 @@ String singleLine = """
 // Before
 String html = "<html>\n" +
               "  <body>\n" +
-              "    <h1>Trade Confirmation</h1>\n" +
-              "    <p>Trade ID: " + tradeId + "</p>\n" +
+              "    <h1>Employee Confirmation</h1>\n" +
+              "    <p>Employee ID: " + employeeId + "</p>\n" +
               "    <p>Status: " + status + "</p>\n" +
               "  </body>\n" +
               "</html>";
@@ -412,8 +412,8 @@ String html = "<html>\n" +
 **Task C — INSERT SQL**
 ```java
 // Before
-String insert = "INSERT INTO trades (trade_id, symbol, notional, status) " +
-                "VALUES ('" + id + "', '" + symbol + "', " + notional + ", 'PENDING')";
+String insert = "INSERT INTO employees (employee_id, name, salary, status) " +
+                "VALUES ('" + id + "', '" + name + "', " + salary + ", 'ONBOARDING')";
 ```
 
 <details>
@@ -423,12 +423,12 @@ String insert = "INSERT INTO trades (trade_id, symbol, notional, status) " +
 String html = """
         <html>
           <body>
-            <h1>Trade Confirmation</h1>
-            <p>Trade ID: %s</p>
+            <h1>Employee Confirmation</h1>
+            <p>Employee ID: %s</p>
             <p>Status: %s</p>
           </body>
         </html>
-        """.formatted(tradeId, status);
+        """.formatted(employeeId, status);
 ```
 </details>
 
@@ -444,14 +444,14 @@ String html = """
 
 ```
 Exception in thread "main" java.lang.NullPointerException
-    at com.bank.trading.TradeProcessor.process(TradeProcessor.java:47)
+    at com.bank.hr.EmployeeProcessor.process(EmployeeProcessor.java:47)
 ```
 
 > You see the line number. But on line 47 you have:
 > ```java
-> String city = trade.counterparty().address().city();
+> String city = employee.department().address().city();
 > ```
-> Which one is null? `trade`? `counterparty()`? `address()`?  
+> Which one is null? `employee`? `department()`? `address()`?  
 > Open debugger. Set breakpoint. Reproduce. **5 minutes lost.**
 
 ---
@@ -461,8 +461,8 @@ Exception in thread "main" java.lang.NullPointerException
 ```
 Exception in thread "main" java.lang.NullPointerException:
 Cannot invoke "Address.city()" because the return value of
-"Counterparty.address()" is null
-    at com.bank.trading.TradeProcessor.process(TradeProcessor.java:47)
+"Department.address()" is null
+    at com.bank.hr.EmployeeProcessor.process(EmployeeProcessor.java:47)
 ```
 
 > Immediately clear: `address()` returned null. No debugger needed.
@@ -478,9 +478,9 @@ int val = data[0];
 // → "Cannot load from int array because "data" is null"
 
 // Method call on null return value
-trade.counterparty().address().city();
+employee.department().address().city();
 // → "Cannot invoke "Address.city()" because the return value of
-//     "Counterparty.address()" is null"
+//     "Department.address()" is null"
 
 // Null assignment to unboxed variable
 Integer boxed = null;
@@ -519,7 +519,7 @@ int primitive = boxed;
 ### 📚 Pre-read for Day 4
 
 > *"What is a `sealed` interface? Look at `SealedClassesExample.java` and count how many  
-> classes are allowed to implement `TradeEvent`. What happens if you try to add a new one outside the file?"*
+> classes are allowed to implement `EmployeeEvent`. What happens if you try to add a new one outside the file?"*
 
 ---
 

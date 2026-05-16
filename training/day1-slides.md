@@ -70,13 +70,13 @@ The compiler matches the lambda `value -> value > 1_000_000` to `test(T t)` auto
 
 | Interface | Signature | Use case | Example |
 |-----------|-----------|----------|---------|
-| `Predicate<T>` | `T → boolean` | Filter / test | `t -> t.notional() > 1_000_000` |
-| `Function<T,R>` | `T → R` | Map / transform | `id -> "TRD-" + id` |
+| `Predicate<T>` | `T → boolean` | Filter / test | `t -> e.salary() > 1_000_000` |
+| `Function<T,R>` | `T → R` | Map / transform | `id -> "EMP-" + id` |
 | `Consumer<T>` | `T → void` | Side effects | `System.out::println` |
-| `Supplier<T>` | `() → T` | Lazy value | `() -> "UNKNOWN_CP"` |
-| `BiFunction<T,U,R>` | `(T,U) → R` | Two inputs | `(sym, ver) -> sym + "_v" + ver` |
+| `Supplier<T>` | `() → T` | Lazy value | `() -> "UNKNOWN_DEPT"` |
+| `BiFunction<T,U,R>` | `(T,U) → R` | Two inputs | `(name, ver) -> name + "_v" + ver` |
 
-**Source:** `LambdaExamples.java` — `isHighValue`, `formatTradeId`, `printTrade`, `getDefaultCounterparty`, `buildTradeKey`
+**Source:** `LambdaExamples.java` — `isHighSalary`, `formatEmployeeId`, `printEmployee`, `getDefaultDepartment`, `buildEmployeeKey`
 
 ---
 
@@ -117,7 +117,7 @@ Predicate<String> isLong   = s -> s.length() > 10;
 Predicate<String> activeAndLong = isActive.and(isLong);
 ```
 
-**Source:** `LambdaExamples.sanitizeAndFormat`, `LambdaExamples.activeAndLongSymbol`
+**Source:** `LambdaExamples.sanitizeAndFormat`, `LambdaExamples.activeAndLongName`
 
 ---
 
@@ -168,7 +168,7 @@ for (String s : statuses) {
 ```java
 // Before
 List<String> upper = new ArrayList<>();
-for (String s : symbols) { upper.add(s.toUpperCase()); }
+for (String s : names) { upper.add(s.toUpperCase()); }
 
 // After → your answer here (use a method reference!)
 ```
@@ -184,7 +184,7 @@ list.sort(String::compareTo);
 statuses.stream().filter(s -> s.startsWith("ACTIVE")).collect(Collectors.toList());
 
 // C
-symbols.stream().map(String::toUpperCase).collect(Collectors.toList());
+names.stream().map(String::toUpperCase).collect(Collectors.toList());
 ```
 </details>
 
@@ -219,38 +219,38 @@ symbols.stream().map(String::toUpperCase).collect(Collectors.toList());
 
 ### Before vs After — 3 Real Examples
 
-**Example 1 — Sum EXECUTED trade notional**
+**Example 1 — Sum ACTIVE employee salary**
 ```java
 // Before (Java 7) — 5 lines, mutation
 double total = 0;
-for (Trade t : trades) {
-    if ("EXECUTED".equals(t.status())) total += t.notional();
+for (Employee e : employees) {
+    if ("ACTIVE".equals(e.status())) total += e.salary();
 }
 
 // After (Java 8) — 3 lines, no mutation
-double total = trades.stream()
-        .filter(t -> "EXECUTED".equals(t.status()))
-        .mapToDouble(Trade::notional)
+double total = employees.stream()
+        .filter(e -> "ACTIVE".equals(e.status()))
+        .mapToDouble(Employee::salary)
         .sum();
 ```
 
-**Example 2 — Distinct sorted symbols**
+**Example 2 — Distinct sorted names**
 ```java
 // Before — 7 lines including Collections.sort
 // After
-List<String> symbols = trades.stream()
-        .map(Trade::symbol)
+List<String> names = employees.stream()
+        .map(Employee::name)
         .distinct()
         .sorted()
         .collect(Collectors.toList());
 ```
 
-**Example 3 — Group by status**
+**Example 3 — Group by department**
 ```java
 // Before — 6 lines with computeIfAbsent
 // After — 1 line
-Map<String, List<Trade>> grouped = trades.stream()
-        .collect(Collectors.groupingBy(Trade::status));
+Map<String, List<Employee>> grouped = employees.stream()
+        .collect(Collectors.groupingBy(Employee::department));
 ```
 
 **Source:** `StreamExamples.java` — all three before/after methods
@@ -264,8 +264,8 @@ Map<String, List<Trade>> grouped = trades.stream()
 | `Collectors.toList()` | Collect into a List | `stream().collect(toList())` |
 | `Collectors.toUnmodifiableList()` | Immutable list (Java 10) | — |
 | `Collectors.joining(", ")` | Concatenate strings | `"T001, T002, T003"` |
-| `Collectors.groupingBy(fn)` | Group into Map | `groupingBy(Trade::status)` |
-| `Collectors.toMap(k, v)` | Index by key | `toMap(Trade::id, t -> t)` |
+| `Collectors.groupingBy(fn)` | Group into Map | `groupingBy(Employee::department)` |
+| `Collectors.toMap(k, v)` | Index by key | `toMap(Employee::id, t -> t)` |
 | `Collectors.counting()` | Count per group | with `groupingBy` |
 
 ---
@@ -274,9 +274,9 @@ Map<String, List<Trade>> grouped = trades.stream()
 
 ```java
 // Input: List<List<String>> portfolios
-// Goal:  one flat sorted distinct list of all symbols
+// Goal:  one flat sorted distinct list of all employee names
 
-List<String> allSymbols = portfolios.stream()
+List<String> allNames = portfolios.stream()
         .flatMap(List::stream)     // flatten: List<List<>> → Stream<String>
         .distinct()
         .sorted()
@@ -288,8 +288,8 @@ List<String> allSymbols = portfolios.stream()
 ### parallelStream — Proceed with Caution
 
 ```java
-double sum = trades.parallelStream()
-        .mapToDouble(Trade::notional)
+double sum = employees.parallelStream()
+        .mapToDouble(Employee::salary)
         .sum();   // safe: reduction is associative
 ```
 
@@ -309,24 +309,24 @@ double sum = trades.parallelStream()
 
 **File:** `StreamExamples.java`
 
-> **Given a list of `Trade(id, symbol, notional, status)` objects, write a single stream pipeline that:**
-> 1. Keeps only trades with status `"ACTIVE"`
-> 2. Sorts them by `notional` descending
+> **Given a list of `Employee(id, name, salary, status)` objects, write a single stream pipeline that:**
+> 1. Keeps only employees with status `"ACTIVE"`
+> 2. Sorts them by `salary` descending
 > 3. Takes the top 3
 > 4. Returns their IDs as a comma-separated `String`
 
 ```java
-List<Trade> trades = List.of(
-    new Trade("T001", "AAPL", 3_000_000, "ACTIVE"),
-    new Trade("T002", "MSFT",   500_000, "ACTIVE"),
-    new Trade("T003", "GOOG", 1_200_000, "PENDING"),
-    new Trade("T004", "TSLA", 2_100_000, "ACTIVE"),
-    new Trade("T005", "NVDA", 4_500_000, "ACTIVE"),
-    new Trade("T006", "META",   800_000, "ACTIVE")
+List<Employee> employees = List.of(
+    new Employee("E001", "Alice",  "ENGINEERING",  130_000, "ACTIVE"),
+    new Employee("E002", "Bob",    "MARKETING",     50_000, "ACTIVE"),
+    new Employee("E003", "Carol",  "SALES",        120_000, "ONBOARDING"),
+    new Employee("E004", "Dave",   "ENGINEERING",  110_000, "ACTIVE"),
+    new Employee("E005", "Eve",    "FINANCE",      150_000, "ACTIVE"),
+    new Employee("E006", "Frank",  "MARKETING",     80_000, "ACTIVE")
 );
 
-// Your pipeline here — expected: "T005, T001, T004"
-String result = trades.stream()
+// Your pipeline here — expected: "E005, E001, E004"
+String result = employees.stream()
         // ...
 ```
 
@@ -334,13 +334,13 @@ String result = trades.stream()
 <summary>💡 Reveal solution</summary>
 
 ```java
-String result = trades.stream()
-        .filter(t -> "ACTIVE".equals(t.status()))
-        .sorted(Comparator.comparingDouble(Trade::notional).reversed())
+String result = employees.stream()
+        .filter(e -> "ACTIVE".equals(e.status()))
+        .sorted(Comparator.comparingDouble(Employee::salary).reversed())
         .limit(3)
-        .map(Trade::id)
+        .map(Employee::id)
         .collect(Collectors.joining(", "));
-// → "T005, T001, T004"
+// → "E005, E001, E004"
 ```
 </details>
 
@@ -356,17 +356,17 @@ String result = trades.stream()
 
 ```java
 // This crashes with NPE if ANY link in the chain is null
-String city = trade.counterparty().address().city();
+String city = employee.department().address().city();
 ```
 
 ### The Java 7 Solution — Defensive Null Checks
 
 ```java
 String city = "UNKNOWN";
-if (trade != null) {
-    Counterparty cp = trade.counterparty();
-    if (cp != null) {
-        Address addr = cp.address();
+if (employee != null) {
+    Department dept = employee.department();
+    if (dept != null) {
+        Address addr = dept.address();
         if (addr != null) {
             city = addr.city();
         }
@@ -374,21 +374,21 @@ if (trade != null) {
 }
 ```
 
-> 14 lines. What was the actual business logic? `trade.counterparty().address().city()`.
+> 14 lines. What was the actual business logic? `employee.department().address().city()`.
 
 ---
 
 ### The Java 8 Solution — `Optional<T>`
 
 ```java
-String city = Optional.ofNullable(trade)
-        .map(Trade::counterparty)
-        .map(Counterparty::address)
+String city = Optional.ofNullable(employee)
+        .map(Employee::department)
+        .map(Department::address)
         .map(Address::city)
         .orElse("UNKNOWN");
 ```
 
-**Source:** `OptionalExamples.getTradeCity_After`
+**Source:** `OptionalExamples.getEmployeeCity_After`
 
 ---
 

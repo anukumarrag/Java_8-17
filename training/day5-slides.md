@@ -72,15 +72,15 @@ ExecutorService exec = Executors.newVirtualThreadPerTaskExecutor();
 
 ---
 
-### Before vs After — Trade Enrichment
+### Before vs After — Employee Enrichment
 
 ```java
 // BEFORE — Fixed thread pool, throughput capped at pool size
-public List<String> enrichTrades_Before(List<String> tradeIds) throws Exception {
+public List<String> enrichEmployees_Before(List<String> employeeIds) throws Exception {
     List<String> results = new ArrayList<>();
     try (ExecutorService exec = Executors.newFixedThreadPool(10)) {
         List<Future<String>> futures = new ArrayList<>();
-        for (String id : tradeIds) {
+        for (String id : employeeIds) {
             futures.add(exec.submit(() -> {
                 simulateIoWork(5);   // blocks the platform thread!
                 return id + ":ENRICHED";
@@ -94,11 +94,11 @@ public List<String> enrichTrades_Before(List<String> tradeIds) throws Exception 
 
 ```java
 // AFTER — Virtual thread per task; 10,000 tasks as easily as 10
-public List<String> enrichTrades_After(List<String> tradeIds) throws Exception {
+public List<String> enrichEmployees_After(List<String> employeeIds) throws Exception {
     List<String> results = new ArrayList<>();
     try (ExecutorService exec = Executors.newVirtualThreadPerTaskExecutor()) {
         List<Future<String>> futures = new ArrayList<>();
-        for (String id : tradeIds) {
+        for (String id : employeeIds) {
             futures.add(exec.submit(() -> {
                 simulateIoWork(5);   // yields the carrier thread — no blocking!
                 return id + ":ENRICHED";
@@ -110,7 +110,7 @@ public List<String> enrichTrades_After(List<String> tradeIds) throws Exception {
 }
 ```
 
-**Source:** `VirtualThreadsExamples.enrichTrades_Before` / `enrichTrades_After`
+**Source:** `VirtualThreadsExamples.enrichEmployees_Before` / `enrichEmployees_After`
 
 ---
 
@@ -122,11 +122,11 @@ ExecutorService exec = Executors.newVirtualThreadPerTaskExecutor();
 
 // Pattern 2: named virtual thread
 Thread vt = Thread.ofVirtual()
-        .name("trade-processor-" + tradeId)
-        .start(() -> process(tradeId));
+        .name("employee-processor-" + employeeId)
+        .start(() -> process(employeeId));
 
 // Pattern 3: shortcut
-Thread vt = Thread.startVirtualThread(() -> process(tradeId));
+Thread vt = Thread.startVirtualThread(() -> process(employeeId));
 
 // Pattern 4: check if running on virtual thread
 boolean isVirtual = Thread.currentThread().isVirtual();  // → true
@@ -137,13 +137,13 @@ boolean isVirtual = Thread.currentThread().isVirtual();  // → true
 ### Fan-Out I/O Pattern
 
 ```java
-// Fetch prices for 1,000 symbols in parallel — one virtual thread per symbol
-public List<String> fetchPricesInParallel(List<String> symbols) throws Exception {
+// Fetch salary data for all departments in parallel — one virtual thread per department
+public List<String> fetchSalaryDataInParallel(List<String> departments) throws Exception {
     try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
-        List<Future<String>> futures = symbols.stream()
-                .map(sym -> exec.submit(() -> {
+        List<Future<String>> futures = departments.stream()
+                .map(dept -> exec.submit(() -> {
                     simulateIoWork(10);   // simulate HTTP call
-                    return sym + "=182.50";
+                    return dept + ":senior_engineer:120000";
                 }))
                 .toList();
 
@@ -180,13 +180,13 @@ public List<String> fetchPricesInParallel(List<String> symbols) throws Exception
 
 ```java
 // CompletableFuture — tasks can "escape" their scope
-CompletableFuture<String> cpFuture = supplyAsync(() -> fetchCounterparty(id));
-CompletableFuture<Double> priceFuture = supplyAsync(() -> fetchPrice(symbol));
+CompletableFuture<String> deptFuture   = supplyAsync(() -> fetchDepartment(id));
+CompletableFuture<Double> salaryFuture = supplyAsync(() -> fetchSalary(name));
 
-// If fetchCounterparty throws, priceFuture still runs!
+// If fetchDepartment throws, salaryFuture still runs!
 // Manual cancellation required. Stack traces lose context.
-String cp    = cpFuture.join();
-double price = priceFuture.join();
+String dept   = deptFuture.join();
+double salary = salaryFuture.join();
 ```
 
 ---
@@ -195,17 +195,17 @@ double price = priceFuture.join();
 
 ```java
 // ShutdownOnFailure: if ANY task fails, cancel the others immediately
-public EnrichedTrade enrich(TradeData trade) throws Exception {
+public EnrichedEmployee enrich(EmployeeData employee) throws Exception {
     try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 
-        var cpTask    = scope.fork(() -> fetchCounterparty(trade.id()));
-        var priceTask = scope.fork(() -> fetchPrice(trade.symbol()));
+        var deptTask   = scope.fork(() -> fetchDepartment(employee.id()));
+        var salaryTask = scope.fork(() -> fetchSalary(employee.name()));
 
         scope.join()           // wait until all tasks complete or one fails
              .throwIfFailed(); // re-throw first exception if any failed
 
         // At this point BOTH tasks succeeded
-        return new EnrichedTrade(trade, cpTask.get(), priceTask.get());
+        return new EnrichedEmployee(employee, deptTask.get(), salaryTask.get());
     }
     // scope.close() — all tasks are guaranteed done or cancelled here
 }
@@ -218,13 +218,13 @@ public EnrichedTrade enrich(TradeData trade) throws Exception {
 ### ShutdownOnSuccess — Race to the First Result
 
 ```java
-// Query 3 pricing sources — use whichever responds first
-public double fastestPriceSource(String symbol) throws Exception {
+// Query 3 salary sources — use whichever responds first
+public double fastestSalarySource(String name) throws Exception {
     try (var scope = new StructuredTaskScope.ShutdownOnSuccess<Double>()) {
 
-        scope.fork(() -> { simulateDelay(50); return fetchPrice(symbol); });
-        scope.fork(() -> { simulateDelay(30); return fetchPrice(symbol); });  // wins
-        scope.fork(() -> { simulateDelay(80); return fetchPrice(symbol); });
+        scope.fork(() -> { simulateDelay(50); return fetchSalary(name); });
+        scope.fork(() -> { simulateDelay(30); return fetchSalary(name); });  // wins
+        scope.fork(() -> { simulateDelay(80); return fetchSalary(name); });
 
         scope.join();
         return scope.result();  // returns the first successful result
@@ -232,7 +232,7 @@ public double fastestPriceSource(String symbol) throws Exception {
 }
 ```
 
-**Source:** `StructuredConcurrencyExamples.fastestPriceSource`
+**Source:** `StructuredConcurrencyExamples.fastestSalarySource`
 
 ---
 
@@ -258,13 +258,13 @@ public double fastestPriceSource(String symbol) throws Exception {
 
 ```java
 // Java 17 — bind a pattern variable, then call accessors
-if (obj instanceof Trade t) {
-    System.out.println(t.id() + " " + t.symbol());
+if (obj instanceof Employee e) {
+    System.out.println(e.id() + " " + e.name());
 }
 
 // Java 21 — deconstruct the record inline
-if (obj instanceof Trade(String id, String symbol, Money notional, Counterparty cp)) {
-    System.out.println(id + " " + symbol);   // no t.id() call needed
+if (obj instanceof Employee(String id, String name, Money salary, Department dept)) {
+    System.out.println(id + " " + name);   // no e.id() call needed
 }
 ```
 
@@ -273,15 +273,15 @@ if (obj instanceof Trade(String id, String symbol, Money notional, Counterparty 
 ### Nested Deconstruction
 
 ```java
-// Single expression deconstructs Trade → Counterparty → Address → city
-if (obj instanceof Trade(String id, _, _, Counterparty(_, _, Address(_, String city, _)))) {
-    return "Trade " + id + " is in " + city;
+// Single expression deconstructs Employee → Department → Address → city
+if (obj instanceof Employee(String id, _, _, Department(_, _, Address(_, String city, _)))) {
+    return "Employee " + id + " is in " + city;
 }
 ```
 
 > Compare to the Java 17 version (four nested null-check blocks to extract the same `city`).
 
-**Source:** `RecordPatternsExamples.describeTradeCity_After`
+**Source:** `RecordPatternsExamples.describeEmployeeCity_After`
 
 ---
 
@@ -289,12 +289,12 @@ if (obj instanceof Trade(String id, _, _, Counterparty(_, _, Address(_, String c
 
 ```java
 // Java 21 — switch on types, exhaustive for sealed types, no default needed
-public String processEvent(TradeEvent event) {
+public String processEvent(EmployeeEvent event) {
     return switch (event) {
-        case TradeEvent.Created(String id, String sym, double qty)
-                -> "New trade %s: %s x %.0f".formatted(id, sym, qty);
-        case TradeEvent.Priced(String id, Money(double amt, String cur))
-                -> "Trade %s priced at %.2f %s".formatted(id, amt, cur);
+        case EmployeeEvent.Created(String id, String sym, double qty)
+                -> "Hired employee %s: %s salary=%.0f".formatted(id, name, salary);
+        case EmployeeEvent.Priced(String id, Money(double amt, String cur))
+                -> "Employee %s promoted, salary %.2f %s".formatted(id, amt, cur);
     };
 }
 ```
@@ -391,14 +391,14 @@ map.sequencedEntrySet().reversed();
 ```java
 // Before — forced to name variables you don't use
 try {
-    process(trade);
+    process(employee);
 } catch (IOException e) {   // 'e' is never used — but you had to name it
     log("I/O error");
 }
 
 // After — explicit intent: "I'm intentionally ignoring this"
 try {
-    process(trade);
+    process(employee);
 } catch (IOException _) {
     log("I/O error");
 }
@@ -413,7 +413,7 @@ return switch (event) {
 
 // Unnamed in for-each (counting iterations)
 int count = 0;
-for (var _ : trades) count++;
+for (var _ : employees) count++;
 ```
 
 **Source:** `UnnamedVariablesExamples.java`
@@ -430,28 +430,28 @@ for (var _ : trades) count++;
 
 ```java
 // Day 4 version (Java 17 style)
-public String processEvent(TradeEvent event) {
+public String processEvent(EmployeeEvent event) {
     return switch (event) {
-        case TradeCreatedEvent  c -> "Created: "  + c.tradeId() + " | " + c.symbol();
-        case TradeExecutedEvent e -> "Executed: " + e.tradeId() + " at " + e.executedPrice();
-        case TradeRejectedEvent r -> "Rejected: " + r.tradeId() + " – " + r.rejectionReason();
-        case TradeUpdatedEvent  u -> "Updated: "  + u.tradeId() + " notional=" + u.newNotional();
+        case EmployeeHiredEvent c      -> "Hired: "      + c.employeeId() + " | " + c.name();
+        case EmployeePromotedEvent e   -> "Promoted: "   + e.employeeId() + " at " + e.promotionDate();
+        case EmployeeTerminatedEvent r -> "Terminated: " + r.employeeId() + " – " + r.terminationReason();
+        case EmployeeUpdatedEvent u    -> "Updated: "    + u.employeeId() + " salary=" + u.newSalary();
     };
 }
 
 // Java 21 upgrade: deconstruct the record components inline
-// Hint: case TradeCreatedEvent(String id, String sym, ...) ->
+// Hint: case EmployeeHiredEvent(String id, String name, ...) ->
 ```
 
 ### Task B — Structured Concurrency for enrichment `[7 min]`
 
 ```java
 // Refactor this sequential enrichment to use StructuredTaskScope.ShutdownOnFailure
-// so counterparty and price lookups run in parallel
-public EnrichedTrade enrichTrade(String tradeId, String symbol) throws Exception {
-    String counterparty = fetchCounterparty(tradeId);  // sequential
-    double price        = fetchPrice(symbol);           // sequential
-    return new EnrichedTrade(tradeId, symbol, counterparty, price);
+// so department and salary lookups run in parallel
+public EnrichedEmployee enrichEmployee(String employeeId, String name) throws Exception {
+    String department = fetchDepartment(employeeId);  // sequential
+    double salary     = fetchSalary(name);            // sequential
+    return new EnrichedEmployee(employeeId, name, department, salary);
 }
 
 // After: use scope.fork() for both, scope.join().throwIfFailed(), then .get()
@@ -461,16 +461,16 @@ public EnrichedTrade enrichTrade(String tradeId, String symbol) throws Exception
 <summary>💡 Reveal Task A solution</summary>
 
 ```java
-public String processEvent(TradeEvent event) {
+public String processEvent(EmployeeEvent event) {
     return switch (event) {
-        case TradeCreatedEvent(String id, String sym, double notional, String cp, _, _)
-                -> "Created: " + id + " | " + sym + " notional=" + notional;
-        case TradeExecutedEvent(String id, _, _, double price, _)
-                -> "Executed: " + id + " at " + price;
-        case TradeRejectedEvent(String id, _, String reason)
-                -> "Rejected: " + id + " – " + reason;
-        case TradeUpdatedEvent(String id, double newNotional, _)
-                -> "Updated: " + id + " notional=" + newNotional;
+        case EmployeeHiredEvent(String id, String name, double salary, String dept, _, _)
+                -> "Hired: " + id + " | " + name + " salary=" + salary;
+        case EmployeePromotedEvent(String id, _, _, double promoDate, _)
+                -> "Promoted: " + id + " on " + promoDate;
+        case EmployeeTerminatedEvent(String id, _, String reason)
+                -> "Terminated: " + id + " – " + reason;
+        case EmployeeUpdatedEvent(String id, double newSalary, _)
+                -> "Updated: " + id + " salary=" + newSalary;
     };
 }
 ```
@@ -480,14 +480,14 @@ public String processEvent(TradeEvent event) {
 <summary>💡 Reveal Task B solution</summary>
 
 ```java
-public EnrichedTrade enrichTrade(String tradeId, String symbol) throws Exception {
+public EnrichedEmployee enrichEmployee(String employeeId, String name) throws Exception {
     try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-        var cpTask    = scope.fork(() -> fetchCounterparty(tradeId));
-        var priceTask = scope.fork(() -> fetchPrice(symbol));
+        var deptTask   = scope.fork(() -> fetchDepartment(employeeId));
+        var salaryTask = scope.fork(() -> fetchSalary(name));
 
         scope.join().throwIfFailed();
 
-        return new EnrichedTrade(tradeId, symbol, cpTask.get(), priceTask.get());
+        return new EnrichedEmployee(employeeId, name, deptTask.get(), salaryTask.get());
     }
 }
 ```

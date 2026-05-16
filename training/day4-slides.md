@@ -19,9 +19,9 @@
 
 | Task | From | To | Feature |
 |------|------|----|---------|
-| 1 — DTO | `TradeTransaction.java` (80-line POJO) | `TradeTransactionRecord.java` | Records |
+| 1 — DTO | `Employee.java` (80-line POJO) | `EmployeeRecord.java` | Records |
 | 2 — SQL | String concatenation in `buildSearchQuery` | Text block + `.formatted()` | Text Blocks |
-| 3 — Events | `TradeEventLegacy` enum hack | `sealed` interface + record subtypes | Sealed Classes |
+| 3 — Events | `EmployeeEventLegacy` enum hack | `sealed` interface + record subtypes | Sealed Classes |
 | 4 — Dispatch | `if/instanceof` chain | Pattern matching + switch expression | Pattern Matching + Switch |
 
 > Each task is independent — finish early? Move to the next. All verified by `WorkshopTest`.
@@ -38,13 +38,13 @@
 
 ```java
 // Java 7–15 — you check the type, then immediately cast to the same type
-if (event instanceof TradeCreated) {
-    TradeCreated c = (TradeCreated) event;  // why cast when we just proved the type?
-    log("New trade: " + c.tradeId());
+if (event instanceof EmployeeHiredEvent) {
+    EmployeeHiredEvent c = (EmployeeHiredEvent) event;  // why cast when we just proved the type?
+    log("New trade: " + c.employeeId());
 }
 ```
 
-> The cast is **redundant information**. The compiler already proved `event` is a `TradeCreated`.
+> The cast is **redundant information**. The compiler already proved `event` is a `EmployeeHiredEvent`.
 > Pattern matching eliminates this noise.
 
 ---
@@ -53,13 +53,13 @@ if (event instanceof TradeCreated) {
 
 ```java
 // Java 16+ — test AND bind in one expression
-if (event instanceof TradeCreated c) {
-    log("New trade: " + c.tradeId());   // 'c' is in scope as TradeCreated
+if (event instanceof EmployeeHiredEvent c) {
+    log("New trade: " + c.employeeId());   // 'c' is in scope as EmployeeHiredEvent
 }
 ```
 
 **What the compiler guarantees:**
-- `c` is in scope **only** in the true branch (where `event` is definitely a `TradeCreated`)
+- `c` is in scope **only** in the true branch (where `event` is definitely a `EmployeeHiredEvent`)
 - No `ClassCastException` possible
 - No redundant variable declaration
 
@@ -73,9 +73,9 @@ public String describeEvent_Before(Object event) {
     if (event instanceof LoginEvent) {
         LoginEvent le = (LoginEvent) event;      // cast 1
         return "LOGIN | user=" + le.userId();
-    } else if (event instanceof TradeEvent) {
-        TradeEvent te = (TradeEvent) event;      // cast 2
-        return "TRADE | id=" + te.tradeId();
+    } else if (event instanceof EmployeeEvent) {
+        EmployeeEvent te = (EmployeeEvent) event;      // cast 2
+        return "TRADE | id=" + te.employeeId();
     } else if (event instanceof AlertEvent) {
         AlertEvent ae = (AlertEvent) event;      // cast 3
         return "ALERT | " + ae.severity();
@@ -90,8 +90,8 @@ public String describeEvent_Before(Object event) {
 public String describeEvent_After(Object event) {
     if (event instanceof LoginEvent le) {
         return "LOGIN | user=" + le.userId();
-    } else if (event instanceof TradeEvent te) {
-        return "TRADE | id=" + te.tradeId();
+    } else if (event instanceof EmployeeEvent te) {
+        return "TRADE | id=" + te.employeeId();
     } else if (event instanceof AlertEvent ae) {
         return "ALERT | " + ae.severity();
     } else {
@@ -110,10 +110,10 @@ The binding variable is in scope on the **right** side of `&&`:
 
 ```java
 // High-value trade guard
-if (event instanceof TradeEvent te && te.amount() > 1_000_000) {
-    return "HIGH-VALUE TRADE: " + te.tradeId() + " = " + te.amount();
-} else if (event instanceof TradeEvent te) {
-    return "Standard trade: " + te.tradeId();
+if (event instanceof EmployeeEvent te && te.amount() > 100_000) {
+    return "HIGH-VALUE TRADE: " + te.employeeId() + " = " + te.amount();
+} else if (event instanceof EmployeeEvent te) {
+    return "Standard trade: " + te.employeeId();
 }
 ```
 
@@ -122,15 +122,15 @@ if (event instanceof TradeEvent te && te.amount() > 1_000_000) {
 for (AuditEvent event : events) {
     if (event instanceof LoginEvent le && !le.success()) {
         System.out.println("SECURITY ALERT: Failed login from " + le.ipAddress());
-    } else if (event instanceof TradeEvent te && te.amount() > 5_000_000) {
-        System.out.println("COMPLIANCE ALERT: Large trade " + te.tradeId());
+    } else if (event instanceof EmployeeEvent te && te.amount() > 5_000_000) {
+        System.out.println("COMPLIANCE ALERT: Large trade " + te.employeeId());
     } else if (event instanceof AlertEvent ae && "CRITICAL".equals(ae.severity())) {
         System.out.println("CRITICAL ALERT: " + ae.message());
     }
 }
 ```
 
-**Source:** `PatternMatchingExamples.describeHighValueTrade`, `processAuditLog`
+**Source:** `PatternMatchingExamples.describeHighSalaryEmployee`, `processAuditLog`
 
 ---
 
@@ -152,10 +152,10 @@ doSomethingWith(le);
 ```java
 // Java 21: pattern matching IN switch (JEP 441)
 String result = switch (event) {
-    case TradeCreated c  -> "New trade: " + c.tradeId();
-    case TradeRejected r -> "Rejected: " + r.rejectionReason();
-    case TradeExecuted e -> "Executed at: " + e.executedPrice();
-    case TradeUpdated u  -> "Updated notional: " + u.newNotional();
+    case EmployeeHiredEvent c  -> "New trade: " + c.employeeId();
+    case EmployeeTerminatedEvent r -> "Rejected: " + r.rejectionReason();
+    case EmployeePromotedEvent e -> "Executed at: " + e.executedPrice();
+    case EmployeeUpdatedEvent u  -> "Updated salary: " + u.newNotional();
 };
 // Exhaustive — no default needed with a sealed type!
 ```
@@ -172,14 +172,14 @@ String result = switch (event) {
 
 ```java
 // Anyone can implement this — including code you don't control
-public interface TradeEvent {
-    String tradeId();
+public interface EmployeeEvent {
+    String employeeId();
 }
 
 // Therefore, every switch/if-else MUST have a default — or silently miss new types
-public String handle(TradeEvent event) {
-    if (event instanceof TradeCreated) { … }
-    else if (event instanceof TradeExecuted) { … }
+public String handle(EmployeeEvent event) {
+    if (event instanceof EmployeeHiredEvent) { … }
+    else if (event instanceof EmployeePromotedEvent) { … }
     else {
         // This silently ignores new event types added by other teams!
         return "Unknown";
@@ -192,21 +192,21 @@ public String handle(TradeEvent event) {
 ### The Sealed Solution — Closed-World Modelling
 
 ```java
-// Only these 4 types can implement TradeEvent — enforced by the compiler
-public sealed interface TradeEvent
-        permits TradeCreated, TradeUpdated, TradeExecuted, TradeRejected {
-    String tradeId();
+// Only these 4 types can implement EmployeeEvent — enforced by the compiler
+public sealed interface EmployeeEvent
+        permits EmployeeHiredEvent, EmployeeUpdatedEvent, EmployeePromotedEvent, EmployeeTerminatedEvent {
+    String employeeId();
 }
 
 // Each permitted type declares itself final, sealed, or non-sealed
-public record TradeCreated(String tradeId, String symbol, double notional)
-        implements TradeEvent {}          // implicitly final (record)
+public record EmployeeHiredEvent(String employeeId, String name, double salary)
+        implements EmployeeEvent {}          // implicitly final (record)
 
-public record TradeRejected(String tradeId, String rejectionReason)
-        implements TradeEvent {}
+public record EmployeeTerminatedEvent(String employeeId, String terminationReason)
+        implements EmployeeEvent {}
 ```
 
-**Source:** `SealedClassesExample.TradeEvent`, `TradeCreated`, `TradeRejected`, `TradeExecuted`, `TradeUpdated`
+**Source:** `SealedClassesExample.EmployeeEvent`, `EmployeeHiredEvent`, `EmployeeTerminatedEvent`, `EmployeePromotedEvent`, `EmployeeUpdatedEvent`
 
 ---
 
@@ -233,24 +233,24 @@ public non-sealed class IrregularPolygon extends Polygon { … }
 
 ---
 
-### Sealed Class Hierarchy — Trade State Machine
+### Sealed Class Hierarchy — Employee State Machine
 
 ```java
-public abstract sealed class TradeState
-        permits TradeState.Draft, TradeState.Pending,
-                TradeState.Settled, TradeState.Cancelled {
+public abstract sealed class EmployeeState
+        permits EmployeeState.Applied, EmployeeState.Onboarding,
+                EmployeeState.Active, EmployeeState.Resigned {
 
-    public final class Draft    extends TradeState { … }
-    public final class Pending  extends TradeState { … }
-    public final class Settled  extends TradeState { … }
-    public final class Cancelled extends TradeState { … }
+    public final class Applied    extends EmployeeState { … }
+    public final class Onboarding extends EmployeeState { … }
+    public final class Active     extends EmployeeState { … }
+    public final class Resigned   extends EmployeeState { … }
 }
 ```
 
 > Each state carries **only the data relevant to that state** — not a single bloated class
 > with optional fields that mean different things in different states.
 
-**Source:** `SealedClassesExample.TradeState`
+**Source:** `SealedClassesExample.EmployeeState`
 
 ---
 
@@ -268,10 +268,10 @@ public sealed interface Result<T> permits Result.Success, Result.Failure {
     record Failure<T>(String reason)    implements Result<T> {}
 }
 
-Result<TradeDetails> result = …;
-if (result instanceof Result.Success<TradeDetails> s) {
+Result<EmployeeDetails> result = …;
+if (result instanceof Result.Success<EmployeeDetails> s) {
     process(s.value());
-} else if (result instanceof Result.Failure<TradeDetails> f) {
+} else if (result instanceof Result.Failure<EmployeeDetails> f) {
     log("Failed: " + f.reason());
 }
 ```
@@ -282,7 +282,7 @@ if (result instanceof Result.Success<TradeDetails> s) {
 
 | ✅ Ideal Use Case | ❌ Wrong Use Case |
 |------------------|-----------------|
-| Domain event hierarchies (`TradeCreated`, `TradeRejected`, …) | Types that genuinely need open extension |
+| Domain event hierarchies (`EmployeeHiredEvent`, `EmployeeTerminatedEvent`, …) | Types that genuinely need open extension |
 | State machines with known states | Plugin/extension points |
 | Result / Either types (`Success` / `Failure`) | Types in a library intended for external extension |
 | Command hierarchies in CQRS | General-purpose base classes |
@@ -300,26 +300,26 @@ if (result instanceof Result.Success<TradeDetails> s) {
 
 ### Task 1 — DTO → Record `[10 min]`
 
-**Before:** `module3/before/TradeTransaction.java` (~80 lines: constructor, 8 getters, `equals`, `hashCode`, `toString`)
+**Before:** `module3/before/Employee.java` (~80 lines: constructor, 8 getters, `equals`, `hashCode`, `toString`)
 
-**Goal:** Produce `module3/after/TradeTransactionRecord.java`
+**Goal:** Produce `module3/after/EmployeeRecord.java`
 
 ```java
 // Step 1: Create the record declaration (one line)
-public record TradeTransactionRecord(
-        String transactionId, String tradeId, String symbol,
-        double notional, String counterpartyId,
-        LocalDateTime executionTime, String status, String venue) { }
+public record EmployeeRecord(
+        String transactionId, String employeeId, String name,
+        double salary, String departmentId,
+        LocalDateTime hireDate, String status, String venue) { }
 
 // Step 2: Add a compact constructor for validation
-public TradeTransactionRecord {
+public EmployeeRecord {
     Objects.requireNonNull(transactionId, "transactionId required");
-    Objects.requireNonNull(tradeId, "tradeId required");
+    Objects.requireNonNull(employeeId, "employeeId required");
     // … remaining fields
 }
 
-// Step 3: Add any domain methods (isHighValue, etc.)
-public boolean isHighValue() { return notional > 1_000_000; }
+// Step 3: Add any domain methods (isHighSalary, etc.)
+public boolean isHighSalary() { return salary > 100_000; }
 ```
 
 > Verify: `WorkshopTest.testTask1_RecordCreation` passes.
@@ -332,14 +332,14 @@ public boolean isHighValue() { return notional > 1_000_000; }
 
 ```java
 // Before — hard to read, easy to break
-private String buildSearchQuery(String status, String symbol) {
-    return "SELECT tx.transaction_id, tx.trade_id, tx.symbol, " +
-           "tx.notional, tx.counterparty_id, tx.execution_time, " +
+private String buildEmployeeQuery(String status, String name) {
+    return "SELECT tx.transaction_id, tx.employee_id, tx.name, " +
+           "tx.salary, tx.department_id, tx.hire_date, " +
            "tx.status, tx.venue " +
-           "FROM trade_transactions tx " +
+           "FROM employee_transactions tx " +
            "WHERE tx.status = '" + status + "' " +
-           "AND tx.symbol = '" + symbol + "' " +
-           "ORDER BY tx.execution_time DESC";
+           "AND tx.name = '" + name + "' " +
+           "ORDER BY tx.hire_date DESC";
 }
 ```
 
@@ -352,11 +352,11 @@ private String buildSearchQuery(String status, String symbol) {
 
 ### Task 3 — Enum Hack → Sealed Hierarchy `[10 min]`
 
-**Before:** `module3/before/TransactionService.TradeEventLegacy` — a plain enum that tries to carry different data for each event type (impossible cleanly with enums)
+**Before:** `module3/before/TransactionService.EmployeeEventLegacy` — a plain enum that tries to carry different data for each event type (impossible cleanly with enums)
 
 ```java
 // The enum hack — one class tries to represent all event shapes
-public enum TradeEventLegacy {
+public enum EmployeeEventLegacy {
     CREATED, UPDATED, EXECUTED, REJECTED;
     // No per-event data possible — callers use convention / casting
 }
@@ -366,15 +366,15 @@ public enum TradeEventLegacy {
 
 ```java
 // After: each event carries exactly the data it needs
-public sealed interface TradeEvent
-        permits TradeCreatedEvent, TradeUpdatedEvent,
-                TradeExecutedEvent, TradeRejectedEvent {
-    String tradeId();
+public sealed interface EmployeeEvent
+        permits EmployeeHiredEvent, EmployeeUpdatedEvent,
+                EmployeePromotedEvent, EmployeeTerminatedEvent {
+    String employeeId();
 }
 ```
 
-> Reference files: `module3/after/TradeEvent.java`, `TradeCreatedEvent.java`,
-> `TradeUpdatedEvent.java`, `TradeExecutedEvent.java`, `TradeRejectedEvent.java`  
+> Reference files: `module3/after/EmployeeEvent.java`, `EmployeeHiredEvent.java`,
+> `EmployeeUpdatedEvent.java`, `EmployeePromotedEvent.java`, `EmployeeTerminatedEvent.java`  
 > Verify: `WorkshopTest.testTask3_SealedEvents` passes.
 
 ---
@@ -386,14 +386,14 @@ public sealed interface TradeEvent
 ```java
 // Before — 3 casts, silently ignores new event types
 public String processEventLegacy(Object event) {
-    if (event instanceof TradeCreated_Before) {
-        TradeCreated_Before c = (TradeCreated_Before) event;   // cast!
-        return "Created: " + c.tradeId();
-    } else if (event instanceof TradeExecuted_Before) {
-        TradeExecuted_Before e = (TradeExecuted_Before) event; // cast!
-        return "Executed: " + e.tradeId();
-    } else if (event instanceof TradeRejected_Before) {
-        TradeRejected_Before r = (TradeRejected_Before) event; // cast!
+    if (event instanceof EmployeeHiredEvent_Before) {
+        EmployeeHiredEvent_Before c = (EmployeeHiredEvent_Before) event;   // cast!
+        return "Created: " + c.employeeId();
+    } else if (event instanceof EmployeePromotedEvent_Before) {
+        EmployeePromotedEvent_Before e = (EmployeePromotedEvent_Before) event; // cast!
+        return "Executed: " + e.employeeId();
+    } else if (event instanceof EmployeeTerminatedEvent_Before) {
+        EmployeeTerminatedEvent_Before r = (EmployeeTerminatedEvent_Before) event; // cast!
         return "Rejected: " + r.reason();
     } else {
         return "Unknown event"; // silently misses new types
@@ -405,12 +405,12 @@ public String processEventLegacy(Object event) {
 
 ```java
 // After: ModernTransactionService.processEvent
-public String processEvent(TradeEvent event) {
+public String processEvent(EmployeeEvent event) {
     return switch (event) {
-        case TradeCreatedEvent  c -> "Created: "  + c.tradeId() + " | " + c.symbol();
-        case TradeUpdatedEvent  u -> "Updated: "  + u.tradeId() + " notional=" + u.newNotional();
-        case TradeExecutedEvent e -> "Executed: " + e.tradeId() + " at " + e.executedPrice();
-        case TradeRejectedEvent r -> "Rejected: " + r.tradeId() + " – " + r.rejectionReason();
+        case EmployeeHiredEvent c      -> "Hired: "      + c.employeeId() + " | " + c.name();
+        case EmployeeUpdatedEvent u    -> "Updated: "    + u.employeeId() + " salary=" + u.newSalary();
+        case EmployeePromotedEvent e   -> "Promoted: "   + e.employeeId() + " at " + e.promotionDate();
+        case EmployeeTerminatedEvent r -> "Terminated: " + r.employeeId() + " – " + r.terminationReason();
     };
     // Exhaustive — no default! New subtypes cause a compile error.
 }
@@ -428,7 +428,7 @@ public String processEvent(TradeEvent event) {
 > - **After:** 1 record + 1 sealed hierarchy + 1 modern service — fewer lines, more expressive
 
 > **The features don't just reduce code — they compose:**
-> - Record subtypes → perfect `TradeEvent` implementations
+> - Record subtypes → perfect `EmployeeEvent` implementations
 > - Sealed interface → the switch knows every case
 > - Switch expression → returns a value, no fall-through
 > - Pattern matching → no casts needed
@@ -440,7 +440,7 @@ public String processEvent(TradeEvent event) {
 ## 🔑 Day 4 Takeaways `[5 min]`
 
 > **Card 1 — Pattern Matching for `instanceof`:**  
-> Combine the type test and variable binding in one step: `event instanceof TradeCreated c`.
+> Combine the type test and variable binding in one step: `event instanceof EmployeeHiredEvent c`.
 > The binding variable `c` is only in scope where the test is provably true. No more redundant casts.
 
 > **Card 2 — Sealed Classes:**  
