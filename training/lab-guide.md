@@ -81,16 +81,16 @@ longAName().test("ENGINEERING") → true,  longAName().test("HR") → false (len
 
 **File to edit:** Create `module1/streams/StreamLab.java`
 
-**Setup — use this trade list:**
+**Setup — use this employee list:**
 ```java
 List<Employee> employees = List.of(
-    new Employee("T001", "AAPL", 3_000_000, "ACTIVE"),
-    new Employee("T002", "MSFT",   500_000, "ACTIVE"),
-    new Employee("T003", "GOOG", 1_200_000, "ONBOARDING"),
-    new Employee("T004", "TSLA", 2_100_000, "ACTIVE"),
-    new Employee("T005", "NVDA", 4_500_000, "ACTIVE"),
-    new Employee("T006", "META",   800_000, "ACTIVE"),
-    new Employee("T007", "AMZN", 1_800_000, "RESIGNED")
+    new Employee("E001", "Alice",   "ENGINEERING", 95_000,  "ACTIVE"),
+    new Employee("E002", "Bob",     "MARKETING",   45_000,  "ACTIVE"),
+    new Employee("E003", "Charlie", "ENGINEERING",  72_000,  "ONBOARDING"),
+    new Employee("E004", "Diana",   "SALES",        81_000,  "ACTIVE"),
+    new Employee("E005", "Eve",     "HR",          120_000, "ACTIVE"),
+    new Employee("E006", "Frank",   "FINANCE",      63_000,  "ACTIVE"),
+    new Employee("E007", "Grace",   "MARKETING",    55_000,  "RESIGNED")
 );
 ```
 
@@ -103,19 +103,19 @@ public String topThreeActiveIds(List<Employee> employees)
 
 // 2. Total salary of all ACTIVE employees
 public double totalActiveSalary(List<Employee> employees)
-// Expected: 570_000.0
+// Expected: 404_000.0
 
-// 3. Distinct symbols where salary > 1_000_000, sorted alphabetically
-public List<String> highSalaryNames(List<Employee> employees)
-// Expected: ["ENGINEERING", "FINANCE"]
+// 3. Distinct departments where salary > 70_000, sorted alphabetically
+public List<String> highSalaryDepartments(List<Employee> employees)
+// Expected: ["ENGINEERING", "HR", "SALES"]
 
 // 4. Map of status → count of employees
-public Map<String, Long> countByDepartment(List<Employee> employees)
-// Expected: {ENGINEERING=2, MARKETING=2, SALES=1, FINANCE=1, LEGAL=1}
+public Map<String, Long> countByStatus(List<Employee> employees)
+// Expected: {ACTIVE=5, ONBOARDING=1, RESIGNED=1}
 
-// 5. Is there any trade with salary > 4_000_000?
+// 5. Is there any employee with salary > 110_000?
 public boolean hasVeryHighSalary(List<Employee> employees)
-// Expected: true (Eve = 150K)
+// Expected: true (Eve = 120K)
 ```
 
 ---
@@ -257,24 +257,24 @@ public String statusDetail(EmployeeStatus status)  // use yield in block arms
 **Task:** Convert the following POJO to a record with full validation.
 
 ```java
-// BEFORE — EmployeeDTO (copy this to a new file CustomerRecord.java and convert it)
+// BEFORE — EmployeeDTO (copy this to a new file EmployeeRecord.java and convert it)
 public class EmployeeDTO {
-    private final String customerId;   // must not be blank
+    private final String employeeId;   // must not be blank
     private final String name;         // must not be null
     private final String email;        // must contain "@"
-    private final String tier;         // must be GOLD, SILVER, or BRONZE
+    private final String department;   // must be ENGINEERING, MARKETING, SALES, FINANCE, or HR
 
     // Full constructor, 4 getters, equals, hashCode, toString
-    // + boolean isGoldTier() { return "GOLD".equals(tier); }
-    // + boolean isPremium()  { return !"BRONZE".equals(tier); }
+    // + boolean isSeniorDept()      { return Set.of("ENGINEERING","FINANCE").contains(department); }
+    // + boolean isRemoteEligible()  { return !"SALES".equals(department); }
 }
 ```
 
-**Requirements for `CustomerRecord`:**
+**Requirements for `EmployeeRecord`:**
 1. One-line record declaration (4 components)
-2. Compact constructor with all validation
-3. Retain `isGoldTier()` and `isPremium()` as instance methods
-4. Add a static factory: `CustomerRecord.bronze(String id, String name, String email)` that creates a BRONZE customer
+2. Compact constructor with all validation (department must be in `Set.of("ENGINEERING","MARKETING","SALES","FINANCE","HR")`)
+3. Retain `isSeniorDept()` and `isRemoteEligible()` as instance methods
+4. Add a static factory: `EmployeeRecord.hr(String id, String name, String email)` that creates an HR employee
 
 **Verify:** Record's `equals` works correctly for two instances with same values.
 
@@ -291,7 +291,7 @@ String esQuery = "{\n" +
                  "    \"bool\": {\n" +
                  "      \"must\": [\n" +
                  "        { \"term\": { \"status\": \"" + status + "\" } },\n" +
-                 "        { \"range\": { \"salary\": { \"gte\": " + minNotional + " } } }\n" +
+                 "        { \"range\": { \"salary\": { \"gte\": " + minSalary + " } } }\n" +
                  "      ]\n" +
                  "    }\n" +
                  "  }\n" +

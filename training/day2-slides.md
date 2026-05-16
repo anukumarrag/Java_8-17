@@ -78,10 +78,10 @@ try (var conn = dataSource.getConnection()) { … }
 
 ```java
 // ❌ Method parameter — compile error
-public void process(var trade) { … }
+public void process(var employee) { … }
 
 // ❌ Return type — compile error
-public var getTrade() { … }
+public var getEmployee() { … }
 
 // ❌ Field — compile error
 class Service { var name = "HR"; }
