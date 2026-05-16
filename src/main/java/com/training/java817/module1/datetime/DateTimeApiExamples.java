@@ -68,14 +68,14 @@ public class DateTimeApiExamples {
         return date.format(DateTimeFormatter.ofPattern("dd-MMM-yyyy"));
     }
 
-    /** Calculate the number of days until settlement. */
-    public long daysUntilSettlement(LocalDate tradeDate, LocalDate settlementDate) {
-        return ChronoUnit.DAYS.between(tradeDate, settlementDate);
+    /** Calculate the number of days until review. */
+    public long daysUntilReview(LocalDate hireDate, LocalDate reviewDate) {
+        return ChronoUnit.DAYS.between(hireDate, reviewDate);
     }
 
-    /** Business rule: settlement date is T+2 (two days after trade date). */
-    public LocalDate standardSettlementDate(LocalDate tradeDate) {
-        return tradeDate.plusDays(2);
+    /** Business rule: review date is T+90 (ninety days after hire date). */
+    public LocalDate standardReviewDate(LocalDate hireDate) {
+        return hireDate.plusDays(90);
     }
 
     /** Is the trade date a weekday? */
@@ -88,8 +88,8 @@ public class DateTimeApiExamples {
 
     // ---- LocalDateTime: date + time, no timezone ----------------------------
 
-    /** Record the exact time a trade was created. */
-    public LocalDateTime tradeCreatedAt(int year, int month, int day, int hour, int minute) {
+    /** Record the exact time an employee was hired. */
+    public LocalDateTime employeeHiredAt(int year, int month, int day, int hour, int minute) {
         return LocalDateTime.of(year, month, day, hour, minute);
     }
 
@@ -107,8 +107,8 @@ public class DateTimeApiExamples {
         return london.withZoneSameInstant(ZoneId.of("America/New_York"));
     }
 
-    /** Build a ZonedDateTime for the trade timestamp in UTC. */
-    public ZonedDateTime tradeTimestampUtc(int year, int month, int day,
+    /** Build a ZonedDateTime for the event timestamp in UTC. */
+    public ZonedDateTime eventTimestampUtc(int year, int month, int day,
                                            int hour, int minute, int second) {
         return ZonedDateTime.of(year, month, day, hour, minute, second, 0,
                 ZoneId.of("UTC"));
@@ -128,23 +128,23 @@ public class DateTimeApiExamples {
 
     // ---- Duration: time-based amounts ----------------------------------------
 
-    /** How long has the trade been in PENDING status? */
-    public Duration pendingDuration(LocalDateTime pendingSince, LocalDateTime now) {
-        return Duration.between(pendingSince, now);
+    /** How long has the employee been in ONBOARDING status? */
+    public Duration onboardingDuration(LocalDateTime onboardingSince, LocalDateTime now) {
+        return Duration.between(onboardingSince, now);
     }
 
-    /** SLA breach: PENDING trades must settle within 4 hours. */
-    public boolean isSlaBreach(LocalDateTime pendingSince, LocalDateTime now) {
-        Duration elapsed = Duration.between(pendingSince, now);
-        Duration sla     = Duration.ofHours(4);
+    /** Overdue: onboarding must complete within 30 days. */
+    public boolean isOnboardingOverdue(LocalDateTime onboardingSince, LocalDateTime now) {
+        Duration elapsed = Duration.between(onboardingSince, now);
+        Duration sla     = Duration.ofDays(30);
         return elapsed.compareTo(sla) > 0;
     }
 
     // ---- Period: date-based amounts ------------------------------------------
 
-    /** How many years, months, days since the counterparty relationship started? */
-    public Period relationshipAge(LocalDate onboardedDate, LocalDate today) {
-        return Period.between(onboardedDate, today);
+    /** How many years, months, days since the employee was hired? */
+    public Period employeeTenure(LocalDate hireDate, LocalDate today) {
+        return Period.between(hireDate, today);
     }
 
     /** Format the period nicely for display. */
@@ -159,8 +159,8 @@ public class DateTimeApiExamples {
         return LocalDateTime.parse(isoString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
-    /** Format a ZonedDateTime as a compact trade timestamp string. */
-    public String formatTradeTimestamp(ZonedDateTime zdt) {
+    /** Format a ZonedDateTime as a compact event timestamp string. */
+    public String formatEventTimestamp(ZonedDateTime zdt) {
         return zdt.format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmssX"));
     }
 
@@ -170,7 +170,7 @@ public class DateTimeApiExamples {
      * LocalDate is IMMUTABLE. plus/minus operations return NEW instances.
      * The original date is NEVER modified.
      */
-    public List<LocalDate> generateSettlementDates(LocalDate start, int count) {
+    public List<LocalDate> generateReviewDates(LocalDate start, int count) {
         LocalDate[] dates = new LocalDate[count];
         LocalDate   current = start;
         for (int i = 0; i < count; i++) {
@@ -185,19 +185,19 @@ public class DateTimeApiExamples {
         DateTimeApiExamples ex = new DateTimeApiExamples();
 
         LocalDate today = LocalDate.of(2024, 3, 15);
-        System.out.println("Formatted     : " + ex.formatDate_After(2024, 3, 15));
-        System.out.println("Settlement T+2: " + ex.standardSettlementDate(today));
-        System.out.println("Is weekday    : " + ex.isWeekday(today));
+        System.out.println("Formatted      : " + ex.formatDate_After(2024, 3, 15));
+        System.out.println("Review T+90    : " + ex.standardReviewDate(today));
+        System.out.println("Is weekday     : " + ex.isWeekday(today));
 
         LocalDateTime noon = LocalDateTime.of(2024, 3, 15, 12, 0);
-        System.out.println("In biz hours  : " + ex.isWithinBusinessHours(noon));
-        System.out.println("London->NY    : " + ex.londonToNewYork(noon));
+        System.out.println("In biz hours   : " + ex.isWithinBusinessHours(noon));
+        System.out.println("London->NY     : " + ex.londonToNewYork(noon));
 
         Instant t1 = Instant.now();
         Instant t2 = t1.plusMillis(250);
-        System.out.println("Elapsed ms    : " + ex.elapsedMillis(t1, t2));
+        System.out.println("Elapsed ms     : " + ex.elapsedMillis(t1, t2));
 
-        Period p = ex.relationshipAge(LocalDate.of(2020, 1, 15), today);
-        System.out.println("Relationship  : " + ex.formatPeriod(p));
+        Period p = ex.employeeTenure(LocalDate.of(2020, 1, 15), today);
+        System.out.println("Employee tenure: " + ex.formatPeriod(p));
     }
 }

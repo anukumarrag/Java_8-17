@@ -76,10 +76,10 @@ class DefaultStaticInterfaceMethodsExamplesTest {
     // ---- transformer pipeline -----------------------------------------------
 
     @Test
-    @DisplayName("applyTransformerPipeline: trims, uppercases, and prepends TRD-")
+    @DisplayName("applyTransformerPipeline: trims, uppercases, and prepends EMP-")
     void transformerPipeline_trimsAndFormats() {
-        assertEquals("TRD-AAPL", ex.applyTransformerPipeline("  aapl  "));
-        assertEquals("TRD-MSFT", ex.applyTransformerPipeline("msft"));
+        assertEquals("EMP-AAPL", ex.applyTransformerPipeline("  aapl  "));
+        assertEquals("EMP-MSFT", ex.applyTransformerPipeline("msft"));
     }
 
     // ---- diamond resolution -------------------------------------------------

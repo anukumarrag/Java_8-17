@@ -189,7 +189,7 @@ public class HttpClientExamples {
 
         System.out.println("\n--- POST JSON ---");
         String jsonPayload = """
-                {"tradeId": "T001", "symbol": "AAPL", "notional": 500000}
+                {"employeeId": "E001", "name": "Alice", "department": "ENGINEERING", "salary": 150000}
                 """;
         var postResp = ex.postJson("https://httpbin.org/post", jsonPayload);
         System.out.println("POST status : " + postResp.statusCode());

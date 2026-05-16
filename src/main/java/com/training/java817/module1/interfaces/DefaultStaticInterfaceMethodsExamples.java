@@ -43,17 +43,17 @@ public class DefaultStaticInterfaceMethodsExamples {
     // =========================================================================
 
     /** Old-style interface – no default or static methods allowed. */
-    public interface TradeValidator_Before {
-        boolean validate(String tradeId);
+    public interface EmployeeValidator_Before {
+        boolean validate(String employeeId);
     }
 
     /**
      * Companion utility class: common logic that cannot live in the interface.
      * Forces callers to depend on a separate class, cluttering the API surface.
      */
-    public static class TradeValidatorUtils {
-        public static boolean isValidFormat(String tradeId) {
-            return tradeId != null && tradeId.matches("TRD-\\d{6}");
+    public static class EmployeeValidatorUtils {
+        public static boolean isValidFormat(String employeeId) {
+            return employeeId != null && employeeId.matches("EMP-\\d{6}");
         }
     }
 
@@ -201,7 +201,7 @@ public class DefaultStaticInterfaceMethodsExamples {
     public String applyTransformerPipeline(String input) {
         Transformer<String> trim      = String::trim;
         Transformer<String> upper     = String::toUpperCase;
-        Transformer<String> addPrefix = s -> "TRD-" + s;
+        Transformer<String> addPrefix = s -> "EMP-" + s;
         Transformer<String> pipeline  = trim.andThen(upper).andThen(addPrefix);
         return pipeline.transform(input);
     }
@@ -219,7 +219,7 @@ public class DefaultStaticInterfaceMethodsExamples {
         System.out.println("Safe (ok)     : " + ex.safeProcessPayment(5_000, "EUR"));
         System.out.println("USD supported : " + ex.currencySupported("USD"));
         System.out.println("CNY supported : " + ex.currencySupported("CNY"));
-        System.out.println("Pipeline      : " + ex.applyTransformerPipeline("  aapl  "));
+        System.out.println("Pipeline      : " + ex.applyTransformerPipeline("  emp-001234  "));
         System.out.println("Audit label   : " + ex.resolveAuditLabel());
 
         PaymentProcessor noop = PaymentProcessor.noOp();

@@ -31,19 +31,19 @@ class DateTimeApiExamplesTest {
     }
 
     @Test
-    @DisplayName("standardSettlementDate: returns T+2")
-    void standardSettlementDate_returnsTPlus2() {
-        LocalDate trade      = LocalDate.of(2024, 3, 15);
-        LocalDate settlement = ex.standardSettlementDate(trade);
-        assertEquals(trade.plusDays(2), settlement);
+    @DisplayName("standardReviewDate: returns hireDate+90")
+    void standardReviewDate_returnsHireDatePlus90() {
+        LocalDate hireDate   = LocalDate.of(2024, 3, 15);
+        LocalDate reviewDate = ex.standardReviewDate(hireDate);
+        assertEquals(hireDate.plusDays(90), reviewDate);
     }
 
     @Test
-    @DisplayName("daysUntilSettlement: computes correct day count")
-    void daysUntilSettlement_computesCorrectly() {
-        LocalDate tradeDate      = LocalDate.of(2024, 3, 15);
-        LocalDate settlementDate = LocalDate.of(2024, 3, 17);
-        assertEquals(2L, ex.daysUntilSettlement(tradeDate, settlementDate));
+    @DisplayName("daysUntilReview: computes correct day count")
+    void daysUntilReview_computesCorrectly() {
+        LocalDate hireDate   = LocalDate.of(2024, 3, 15);
+        LocalDate reviewDate = LocalDate.of(2024, 6, 13);
+        assertEquals(90L, ex.daysUntilReview(hireDate, reviewDate));
     }
 
     @Test
@@ -61,11 +61,11 @@ class DateTimeApiExamplesTest {
     @DisplayName("isWithinBusinessHours: 12:00 is within, 07:00 and 17:00 are not")
     void isWithinBusinessHours_correctBoundary() {
         assertTrue(ex.isWithinBusinessHours(
-                ex.tradeCreatedAt(2024, 3, 15, 12, 0)));
+                ex.employeeHiredAt(2024, 3, 15, 12, 0)));
         assertFalse(ex.isWithinBusinessHours(
-                ex.tradeCreatedAt(2024, 3, 15, 7, 59)));
+                ex.employeeHiredAt(2024, 3, 15, 7, 59)));
         assertFalse(ex.isWithinBusinessHours(
-                ex.tradeCreatedAt(2024, 3, 15, 17, 0)));
+                ex.employeeHiredAt(2024, 3, 15, 17, 0)));
     }
 
     // ---- ZonedDateTime ------------------------------------------------------
@@ -83,9 +83,9 @@ class DateTimeApiExamplesTest {
     }
 
     @Test
-    @DisplayName("tradeTimestampUtc: creates UTC ZonedDateTime correctly")
-    void tradeTimestampUtc_setsCorrectZone() {
-        ZonedDateTime ts = ex.tradeTimestampUtc(2024, 3, 15, 9, 30, 0);
+    @DisplayName("eventTimestampUtc: creates UTC ZonedDateTime correctly")
+    void eventTimestampUtc_setsCorrectZone() {
+        ZonedDateTime ts = ex.eventTimestampUtc(2024, 3, 15, 9, 30, 0);
         assertEquals(ZoneId.of("UTC"), ts.getZone());
         assertEquals(2024, ts.getYear());
         assertEquals(9,    ts.getHour());
@@ -102,29 +102,29 @@ class DateTimeApiExamplesTest {
     }
 
     @Test
-    @DisplayName("isSlaBreach: 5 hours pending breaches 4-hour SLA")
-    void isSlaBreach_5HoursBreachesSla() {
-        LocalDateTime start = LocalDateTime.of(2024, 3, 15, 9, 0);
-        LocalDateTime now   = LocalDateTime.of(2024, 3, 15, 14, 1);
-        assertTrue(ex.isSlaBreach(start, now));
+    @DisplayName("isOnboardingOverdue: 31 days onboarding exceeds 30-day SLA")
+    void isOnboardingOverdue_31DaysBreachesSla() {
+        LocalDateTime start = LocalDateTime.of(2024, 1, 1, 9, 0);
+        LocalDateTime now   = LocalDateTime.of(2024, 2, 1, 9, 1);
+        assertTrue(ex.isOnboardingOverdue(start, now));
     }
 
     @Test
-    @DisplayName("isSlaBreach: 3 hours pending does not breach SLA")
-    void isSlaBreach_3HoursDoesNotBreach() {
-        LocalDateTime start = LocalDateTime.of(2024, 3, 15, 9, 0);
-        LocalDateTime now   = LocalDateTime.of(2024, 3, 15, 12, 0);
-        assertFalse(ex.isSlaBreach(start, now));
+    @DisplayName("isOnboardingOverdue: 29 days onboarding does not breach SLA")
+    void isOnboardingOverdue_29DaysDoesNotBreach() {
+        LocalDateTime start = LocalDateTime.of(2024, 1, 1, 9, 0);
+        LocalDateTime now   = LocalDateTime.of(2024, 1, 30, 9, 0);
+        assertFalse(ex.isOnboardingOverdue(start, now));
     }
 
     // ---- Period -------------------------------------------------------------
 
     @Test
-    @DisplayName("relationshipAge: computes years, months, days correctly")
-    void relationshipAge_computesCorrectly() {
-        LocalDate onboarded = LocalDate.of(2020, 1, 15);
-        LocalDate today     = LocalDate.of(2024, 3, 15);
-        Period p = ex.relationshipAge(onboarded, today);
+    @DisplayName("employeeTenure: computes years, months, days correctly")
+    void employeeTenure_computesCorrectly() {
+        LocalDate hireDate = LocalDate.of(2020, 1, 15);
+        LocalDate today    = LocalDate.of(2024, 3, 15);
+        Period p = ex.employeeTenure(hireDate, today);
         assertEquals(4, p.getYears());
         assertEquals(2, p.getMonths());
         assertEquals(0, p.getDays());
@@ -140,19 +140,19 @@ class DateTimeApiExamplesTest {
     // ---- Immutability -------------------------------------------------------
 
     @Test
-    @DisplayName("generateSettlementDates: original start date is unchanged")
-    void generateSettlementDates_doesNotMutateStart() {
+    @DisplayName("generateReviewDates: original start date is unchanged")
+    void generateReviewDates_doesNotMutateStart() {
         LocalDate start = LocalDate.of(2024, 3, 15);
-        ex.generateSettlementDates(start, 5);
+        ex.generateReviewDates(start, 5);
         assertEquals(LocalDate.of(2024, 3, 15), start,
                 "Original date must not be mutated – LocalDate is immutable");
     }
 
     @Test
-    @DisplayName("generateSettlementDates: produces correct sequence")
-    void generateSettlementDates_producesCorrectSequence() {
+    @DisplayName("generateReviewDates: produces correct sequence")
+    void generateReviewDates_producesCorrectSequence() {
         LocalDate start = LocalDate.of(2024, 3, 15);
-        var dates = ex.generateSettlementDates(start, 3);
+        var dates = ex.generateReviewDates(start, 3);
         assertEquals(3, dates.size());
         assertEquals(LocalDate.of(2024, 3, 15), dates.get(0));
         assertEquals(LocalDate.of(2024, 3, 16), dates.get(1));

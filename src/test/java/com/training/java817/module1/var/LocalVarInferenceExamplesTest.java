@@ -17,50 +17,50 @@ class LocalVarInferenceExamplesTest {
     @BeforeEach
     void setUp() { ex = new LocalVarInferenceExamples(); }
 
-    private List<LocalVarInferenceExamples.Trade> sampleTrades() {
+    private List<LocalVarInferenceExamples.Employee> sampleEmployees() {
         return List.of(
-                new LocalVarInferenceExamples.Trade("T1", "AAPL", 500_000,   "EXECUTED"),
-                new LocalVarInferenceExamples.Trade("T2", "MSFT", 1_500_000, "EXECUTED"),
-                new LocalVarInferenceExamples.Trade("T3", "GOOG", 800_000,   "PENDING")
+                new LocalVarInferenceExamples.Employee("E1", "Alice",   "ENGINEERING", 50_000,  "ACTIVE"),
+                new LocalVarInferenceExamples.Employee("E2", "Bob",     "ENGINEERING", 150_000, "ACTIVE"),
+                new LocalVarInferenceExamples.Employee("E3", "Charlie", "MARKETING",   80_000,  "ONBOARDING")
         );
     }
 
-    // ---- groupByStatus -------------------------------------------------------
+    // ---- groupByDepartment ---------------------------------------------------
 
     @Test
-    @DisplayName("groupByStatus: before and after produce identical results")
-    void groupByStatus_beforeAndAfterMatch() {
-        var trades = sampleTrades();
-        assertEquals(ex.groupByStatus_Before(trades).keySet(),
-                     ex.groupByStatus_After(trades).keySet());
+    @DisplayName("groupByDepartment: before and after produce identical results")
+    void groupByDepartment_beforeAndAfterMatch() {
+        var employees = sampleEmployees();
+        assertEquals(ex.groupByDepartment_Before(employees).keySet(),
+                     ex.groupByDepartment_After(employees).keySet());
     }
 
     @Test
-    @DisplayName("groupByStatus_After: groups correctly using var")
-    void groupByStatus_After_groupsCorrectly() {
-        var grouped = ex.groupByStatus_After(sampleTrades());
+    @DisplayName("groupByDepartment_After: groups correctly using var")
+    void groupByDepartment_After_groupsCorrectly() {
+        var grouped = ex.groupByDepartment_After(sampleEmployees());
         assertEquals(2, grouped.size());
-        assertEquals(2, grouped.get("EXECUTED").size());
-        assertEquals(1, grouped.get("PENDING").size());
+        assertEquals(2, grouped.get("ENGINEERING").size());
+        assertEquals(1, grouped.get("MARKETING").size());
     }
 
-    // ---- sumHighValueTrades --------------------------------------------------
+    // ---- sumHighSalaryEmployees ----------------------------------------------
 
     @Test
-    @DisplayName("sumHighValueTrades: only sums trades above 1M notional")
-    void sumHighValueTrades_onlySumsAbove1M() {
-        double sum = ex.sumHighValueTrades(sampleTrades());
-        assertEquals(1_500_000.0, sum, 0.001,
-                "only T2 (1.5M) should be counted; T1 (500k) and T3 (800k) are below");
+    @DisplayName("sumHighSalaryEmployees: only sums employees above 100k salary")
+    void sumHighSalaryEmployees_onlySumsAbove100k() {
+        double sum = ex.sumHighSalaryEmployees(sampleEmployees());
+        assertEquals(150_000.0, sum, 0.001,
+                "only E2 (150k) should be counted; E1 (50k) and E3 (80k) are below");
     }
 
     @Test
-    @DisplayName("sumHighValueTrades: returns 0 when no trades above threshold")
-    void sumHighValueTrades_noneAboveThreshold_returnsZero() {
-        var lowTrades = List.of(
-                new LocalVarInferenceExamples.Trade("T1", "AAPL", 100_000, "EXECUTED")
+    @DisplayName("sumHighSalaryEmployees: returns 0 when no employees above threshold")
+    void sumHighSalaryEmployees_noneAboveThreshold_returnsZero() {
+        var lowEmployees = List.of(
+                new LocalVarInferenceExamples.Employee("E1", "Alice", "ENGINEERING", 50_000, "ACTIVE")
         );
-        assertEquals(0.0, ex.sumHighValueTrades(lowTrades), 0.001);
+        assertEquals(0.0, ex.sumHighSalaryEmployees(lowEmployees), 0.001);
     }
 
     // ---- readLines -----------------------------------------------------------
@@ -82,18 +82,18 @@ class LocalVarInferenceExamplesTest {
         assertEquals("hello", lines.get(0));
     }
 
-    // ---- processSymbols (var in lambda) -------------------------------------
+    // ---- processNames (var in lambda) ----------------------------------------
 
     @Test
-    @DisplayName("processSymbols: strips, uppercases, and filters blank/null")
-    void processSymbols_stripsAndUppercases() {
+    @DisplayName("processNames: strips, uppercases, and filters blank/null")
+    void processNames_stripsAndUppercases() {
         var mutable = new ArrayList<String>();
-        mutable.add("aapl");
-        mutable.add(" msft ");
+        mutable.add("alice");
+        mutable.add(" bob ");
         mutable.add(null);
         mutable.add("");
-        var result = ex.processSymbols(mutable);
-        assertEquals(List.of("AAPL", "MSFT"), result);
+        var result = ex.processNames(mutable);
+        assertEquals(List.of("ALICE", "BOB"), result);
     }
 
     // ---- buildNestedMap ------------------------------------------------------
@@ -102,16 +102,16 @@ class LocalVarInferenceExamplesTest {
     @DisplayName("buildNestedMap: produces correct deeply nested structure")
     void buildNestedMap_correctStructure() {
         var map = ex.buildNestedMap();
-        assertNotNull(map.get("equities"));
-        assertEquals(List.of("AAPL", "MSFT"), map.get("equities").get("symbols"));
+        assertNotNull(map.get("europe"));
+        assertEquals(List.of("ENGINEERING", "MARKETING"), map.get("europe").get("departments"));
     }
 
-    // ---- formatTrade ---------------------------------------------------------
+    // ---- formatEmployee ------------------------------------------------------
 
     @Test
-    @DisplayName("formatTrade: produces formatted string")
-    void formatTrade_producesFormattedString() {
-        String result = ex.formatTrade("T001", 1_500_000.0);
-        assertEquals("TRD[T001]=1500000.0", result);
+    @DisplayName("formatEmployee: produces formatted string")
+    void formatEmployee_producesFormattedString() {
+        String result = ex.formatEmployee("E001", 150_000.0);
+        assertEquals("EMP[E001]=150000.0", result);
     }
 }

@@ -34,24 +34,24 @@ class StringApiEnhancementsExamplesTest {
         assertFalse(ex.isBlankOrEmpty(" a "));
     }
 
-    // ---- validateTradeId ----------------------------------------------------
+    // ---- validateEmployeeId -------------------------------------------------
 
     @Test
-    @DisplayName("validateTradeId: strips whitespace and returns value")
-    void validateTradeId_stripsAndReturns() {
-        assertEquals("T001", ex.validateTradeId("  T001  "));
+    @DisplayName("validateEmployeeId: strips whitespace and returns value")
+    void validateEmployeeId_stripsAndReturns() {
+        assertEquals("E001", ex.validateEmployeeId("  E001  "));
     }
 
     @Test
-    @DisplayName("validateTradeId: throws for null")
-    void validateTradeId_nullThrows() {
-        assertThrows(IllegalArgumentException.class, () -> ex.validateTradeId(null));
+    @DisplayName("validateEmployeeId: throws for null")
+    void validateEmployeeId_nullThrows() {
+        assertThrows(IllegalArgumentException.class, () -> ex.validateEmployeeId(null));
     }
 
     @Test
-    @DisplayName("validateTradeId: throws for blank string")
-    void validateTradeId_blankThrows() {
-        assertThrows(IllegalArgumentException.class, () -> ex.validateTradeId("   "));
+    @DisplayName("validateEmployeeId: throws for blank string")
+    void validateEmployeeId_blankThrows() {
+        assertThrows(IllegalArgumentException.class, () -> ex.validateEmployeeId("   "));
     }
 
     // ---- strip / stripLeading / stripTrailing --------------------------------
@@ -107,29 +107,29 @@ class StringApiEnhancementsExamplesTest {
     }
 
     @Test
-    @DisplayName("parseTradeIds: strips whitespace and filters blanks")
-    void parseTradeIds_stripsAndFilters() {
-        String block = "T001\n  T002  \n\nT003\n";
-        List<String> ids = ex.parseTradeIds(block);
-        assertEquals(List.of("T001", "T002", "T003"), ids);
+    @DisplayName("parseEmployeeIds: strips whitespace and filters blanks")
+    void parseEmployeeIds_stripsAndFilters() {
+        String block = "E001\n  E002  \n\nE003\n";
+        List<String> ids = ex.parseEmployeeIds(block);
+        assertEquals(List.of("E001", "E002", "E003"), ids);
     }
 
     // ---- transform (Java 12) ------------------------------------------------
 
     @Test
-    @DisplayName("processTradeId: strips, uppercases, and prepends TRD-")
-    void processTradeId_stripsUppercasesAndPrepends() {
-        assertEquals("TRD-T001", ex.processTradeId("  t001  "));
-        assertEquals("TRD-AAPL", ex.processTradeId("aapl"));
+    @DisplayName("processEmployeeId: strips, uppercases, and prepends EMP-")
+    void processEmployeeId_stripsUppercasesAndPrepends() {
+        assertEquals("EMP-T001", ex.processEmployeeId("  t001  "));
+        assertEquals("EMP-AAPL", ex.processEmployeeId("aapl"));
     }
 
     // ---- formatted (Java 15) ------------------------------------------------
 
     @Test
-    @DisplayName("formatTradeMessage: produces formatted trade string")
-    void formatTradeMessage_producesCorrectString() {
-        String result = ex.formatTradeMessage("T001", "AAPL", 1_500_000.0);
-        assertEquals("Trade T001 | Symbol: AAPL | Notional: 1500000.00", result);
+    @DisplayName("formatEmployeeMessage: produces formatted employee string")
+    void formatEmployeeMessage_producesCorrectString() {
+        String result = ex.formatEmployeeMessage("E001", "ENGINEERING", 150_000.0);
+        assertEquals("Employee E001 | Dept: ENGINEERING | Salary: 150000.00", result);
     }
 
     // ---- translateEscapes (Java 15) -----------------------------------------

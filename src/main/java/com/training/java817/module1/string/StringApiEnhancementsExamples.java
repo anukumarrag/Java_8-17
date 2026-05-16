@@ -74,12 +74,12 @@ public class StringApiEnhancementsExamples {
         return s == null || s.isBlank();
     }
 
-    /** Validate trade ID: reject blank or null values. */
-    public String validateTradeId(String tradeId) {
-        if (tradeId == null || tradeId.isBlank()) {
-            throw new IllegalArgumentException("Trade ID must not be blank");
+    /** Validate employee ID: reject blank or null values. */
+    public String validateEmployeeId(String employeeId) {
+        if (employeeId == null || employeeId.isBlank()) {
+            throw new IllegalArgumentException("Employee ID must not be blank");
         }
-        return tradeId.strip();
+        return employeeId.strip();
     }
 
     // ---- strip / stripLeading / stripTrailing (Java 11) ---------------------
@@ -102,10 +102,10 @@ public class StringApiEnhancementsExamples {
         return "-".repeat(width);
     }
 
-    public String buildTradeReport(List<String> tradeIds) {
-        String header = "Trade Report";
+    public String buildEmployeeReport(List<String> employeeIds) {
+        String header = "Employee Report";
         String sep    = "=".repeat(header.length());
-        String rows   = String.join("\n", tradeIds);
+        String rows   = String.join("\n", employeeIds);
         return sep + "\n" + header + "\n" + sep + "\n" + rows;
     }
 
@@ -121,7 +121,7 @@ public class StringApiEnhancementsExamples {
                 .count();
     }
 
-    public List<String> parseTradeIds(String csvBlock) {
+    public List<String> parseEmployeeIds(String csvBlock) {
         return csvBlock.lines()
                 .map(String::strip)
                 .filter(s -> !s.isBlank())
@@ -144,11 +144,11 @@ public class StringApiEnhancementsExamples {
      * transform(Function<String,R>): apply any function to this string, useful
      * for building readable processing pipelines.
      */
-    public String processTradeId(String rawId) {
+    public String processEmployeeId(String rawId) {
         return rawId
                 .transform(String::strip)
                 .transform(String::toUpperCase)
-                .transform(s -> "TRD-" + s);
+                .transform(s -> "EMP-" + s);
     }
 
     // =========================================================================
@@ -159,8 +159,8 @@ public class StringApiEnhancementsExamples {
      * formatted(args): instance method equivalent of String.format(this, args).
      * Enables method chaining on the format template itself.
      */
-    public String formatTradeMessage(String tradeId, String symbol, double notional) {
-        return "Trade %s | Symbol: %s | Notional: %.2f".formatted(tradeId, symbol, notional);
+    public String formatEmployeeMessage(String employeeId, String department, double salary) {
+        return "Employee %s | Dept: %s | Salary: %.2f".formatted(employeeId, department, salary);
     }
 
     /**
@@ -189,12 +189,12 @@ public class StringApiEnhancementsExamples {
         System.out.println("separator     : " + ex.buildSeparator(20));
         System.out.println("repeat        : " + "=-".repeat(5));
 
-        String block = "T001\n  T002  \n\nT003\n";
-        System.out.println("Non-blank lines: " + ex.countNonBlankLines(block));
-        System.out.println("Trade IDs      : " + ex.parseTradeIds(block));
+        String block = "E001\n  E002  \n\nE003\n";
+        System.out.println("Non-blank lines : " + ex.countNonBlankLines(block));
+        System.out.println("Employee IDs    : " + ex.parseEmployeeIds(block));
 
-        System.out.println("processTradeId : " + ex.processTradeId("  t001  "));
-        System.out.println("formatted      : " + ex.formatTradeMessage("T001","AAPL",1_500_000.0));
-        System.out.println("translateEscape: " + ex.expandEscapes("line1\\nline2\\ttabbed"));
+        System.out.println("processEmployeeId: " + ex.processEmployeeId("  e001  "));
+        System.out.println("formatted        : " + ex.formatEmployeeMessage("E001","ENGINEERING",150_000.0));
+        System.out.println("translateEscape  : " + ex.expandEscapes("line1\\nline2\\ttabbed"));
     }
 }

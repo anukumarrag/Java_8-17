@@ -53,17 +53,17 @@ import java.util.Map;
  */
 public class LocalVarInferenceExamples {
 
-    public record Trade(String id, String symbol, double notional, String status) {}
+    public record Employee(String id, String name, String department, double salary, String status) {}
 
     // =========================================================================
     // BEFORE – Verbose explicit types (Java 9 style)
     // =========================================================================
 
-    public Map<String, List<Trade>> groupByStatus_Before(List<Trade> trades) {
-        Map<String, List<Trade>> result = new HashMap<>();
-        for (Trade trade : trades) {
-            List<Trade> group = result.computeIfAbsent(trade.status(), k -> new ArrayList<>());
-            group.add(trade);
+    public Map<String, List<Employee>> groupByDepartment_Before(List<Employee> employees) {
+        Map<String, List<Employee>> result = new HashMap<>();
+        for (Employee employee : employees) {
+            List<Employee> group = result.computeIfAbsent(employee.department(), k -> new ArrayList<>());
+            group.add(employee);
         }
         return result;
     }
@@ -72,11 +72,11 @@ public class LocalVarInferenceExamples {
     // AFTER – var (Java 10)
     // =========================================================================
 
-    public Map<String, List<Trade>> groupByStatus_After(List<Trade> trades) {
-        var result = new HashMap<String, List<Trade>>();    // type inferred: HashMap<String, List<Trade>>
-        for (var trade : trades) {                          // type inferred: Trade
-            var group = result.computeIfAbsent(trade.status(), k -> new ArrayList<>());
-            group.add(trade);
+    public Map<String, List<Employee>> groupByDepartment_After(List<Employee> employees) {
+        var result = new HashMap<String, List<Employee>>();    // type inferred: HashMap<String, List<Employee>>
+        for (var employee : employees) {                       // type inferred: Employee
+            var group = result.computeIfAbsent(employee.department(), k -> new ArrayList<>());
+            group.add(employee);
         }
         return result;
     }
@@ -85,11 +85,11 @@ public class LocalVarInferenceExamples {
     // var with primitives and literals
     // =========================================================================
 
-    public double calculateNotional(int quantity, double price) {
-        var total    = quantity * price;        // inferred: double
+    public double calculateTotalSalary(int headcount, double avgSalary) {
+        var total    = headcount * avgSalary;   // inferred: double
         var rounded  = Math.round(total);       // inferred: long
-        var currency = "USD";                   // inferred: String
-        System.out.println(currency + " " + rounded);
+        var location = "BANGALORE";             // inferred: String
+        System.out.println(location + " " + rounded);
         return total;
     }
 
@@ -101,8 +101,8 @@ public class LocalVarInferenceExamples {
         // Before: Map<String, Map<String, List<String>>> outer = new HashMap<>();
         var outer = new HashMap<String, Map<String, List<String>>>();
         var inner = new HashMap<String, List<String>>();
-        inner.put("symbols", new ArrayList<>(List.of("AAPL", "MSFT")));
-        outer.put("equities", inner);
+        inner.put("departments", new ArrayList<>(List.of("ENGINEERING", "MARKETING")));
+        outer.put("europe", inner);
         return outer;
     }
 
@@ -126,11 +126,11 @@ public class LocalVarInferenceExamples {
     // var in for-each (most common use case)
     // =========================================================================
 
-    public double sumHighValueTrades(List<Trade> trades) {
+    public double sumHighSalaryEmployees(List<Employee> employees) {
         double sum = 0;
-        for (var t : trades) {                              // concise loop variable
-            if (t.notional() > 1_000_000) {
-                sum += t.notional();
+        for (var e : employees) {                             // concise loop variable
+            if (e.salary() > 100_000) {
+                sum += e.salary();
             }
         }
         return sum;
@@ -140,10 +140,10 @@ public class LocalVarInferenceExamples {
     // Java 11 – var in lambda parameters (enables annotations)
     // =========================================================================
 
-    public List<String> processSymbols(List<String> symbols) {
+    public List<String> processNames(List<String> names) {
         // var in lambda parameters allows attaching annotations like @NonNull
         // (annotation support shown conceptually – requires annotation library)
-        return symbols.stream()
+        return names.stream()
                 .filter((var s) -> s != null && !s.isBlank())
                 .map((var s)    -> s.trim().toUpperCase())
                 .toList();
@@ -154,10 +154,10 @@ public class LocalVarInferenceExamples {
     // =========================================================================
 
     /** This method CANNOT use var for its parameter (compile error if tried). */
-    public String formatTrade(String tradeId, double notional) {
-        // var tradeId  – NOT allowed: method parameter
-        // var notional – NOT allowed: method parameter
-        var formatted = "TRD[" + tradeId + "]=" + notional;   // OK: local var
+    public String formatEmployee(String employeeId, double salary) {
+        // var employeeId – NOT allowed: method parameter
+        // var salary     – NOT allowed: method parameter
+        var formatted = "EMP[" + employeeId + "]=" + salary;   // OK: local var
         return formatted;
     }
 
@@ -165,22 +165,22 @@ public class LocalVarInferenceExamples {
     public static void main(String[] args) throws Exception {
         LocalVarInferenceExamples ex = new LocalVarInferenceExamples();
 
-        var trades = List.of(
-                new Trade("T1", "AAPL", 500_000,   "EXECUTED"),
-                new Trade("T2", "MSFT", 1_500_000, "EXECUTED"),
-                new Trade("T3", "GOOG", 800_000,   "PENDING")
+        var employees = List.of(
+                new Employee("E1", "Alice",   "ENGINEERING", 50_000,  "ACTIVE"),
+                new Employee("E2", "Bob",     "ENGINEERING", 150_000, "ACTIVE"),
+                new Employee("E3", "Charlie", "MARKETING",   80_000,  "ONBOARDING")
         );
 
-        var grouped = ex.groupByStatus_After(trades);
+        var grouped = ex.groupByDepartment_After(employees);
         System.out.println("Grouped keys  : " + grouped.keySet());
 
-        var sum = ex.sumHighValueTrades(trades);
-        System.out.println("High-value sum: " + sum);
+        var sum = ex.sumHighSalaryEmployees(employees);
+        System.out.println("High-salary sum: " + sum);
 
         var lines = ex.readLines("line1\nline2\nline3");
         System.out.println("Lines read    : " + lines);
 
-        var symbols = ex.processSymbols(List.of("aapl", " msft ", null, ""));
-        System.out.println("Symbols       : " + symbols);
+        var names = ex.processNames(List.of("alice", " bob ", null, ""));
+        System.out.println("Names         : " + names);
     }
 }
